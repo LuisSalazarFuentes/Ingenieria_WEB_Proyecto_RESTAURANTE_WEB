@@ -1,4 +1,4 @@
-# 🍔 Restaurante Web ¡De Todo Un Poco ! (Nombre aun por confirmar, puede ser modificado)
+# 🍔 Restaurante Web ¡De Todo Un Poco ! El ratatouille
 
 ## 📌 Requerimientos Funcionales (RF)
 
