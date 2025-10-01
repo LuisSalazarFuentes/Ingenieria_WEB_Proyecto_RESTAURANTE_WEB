@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Restaurante • Nombre por definir aun jsjs</title>
+  <!-- Vinculación a CSS pa los estilos jsjsjs-->
+  <link rel="stylesheet" href="css/estilos.css">
+</head>
+
+<body>
+<header>
+  <div class="container row">
+    <div class="brand"><div class="logo">🍔</div>¡DE TODO UN POCO!</div>
+    <div class="row" style="gap:8px">
+      <span class="chip">Rol:
+        <select id="roleSelect">
+          <option value="cliente">Cliente</option>
+          <option value="vendedor">Vendedor</option>
+          <option value="admin">Administrador</option>
+        </select>
+      </span>
+      <button class="btn brand" id="seedBtn">Datos demo</button>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+  <!-- CLIENTE -->
+  <section id="cliente-app" hidden>
+    <div class="filter-bar" id="filterBar"></div>
+    <div class="layout">
+      <div>
+        <h2>Menú</h2>
+        <div class="grid menu" id="menuGrid"></div>
+      </div>
+      <aside class="aside card">
+        <div class="p">
+          <h3>Carrito</h3>
+          <div id="cartList" class="muted">Tu carrito está vacío</div>
+          <hr style="border-color:#1f2a2e" />
+          <div class="row" style="justify-content:space-between">
+            <strong>Total</strong>
+            <strong id="cartTotal" class="price">$0.00</strong>
+          </div>
+          <br/>
+          <button id="checkoutBtn" class="btn acc" style="width:100%">Confirmar pedido</button>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- VENDEDOR -->
+  <section id="vendedor-app" hidden>
+    <h2>Pedidos entrantes</h2>
+    <div class="grid" id="ordersGrid"></div>
+  </section>
+
+  <!-- ADMIN -->
+  <section id="admin-app" hidden>
+    <h2>Panel de administración</h2>
+    <div class="kpi">
+      <div class="card"><div class="tag">Ventas</div><h2 id="kpiVentas">$0.00</h2></div>
+      <div class="card"><div class="tag">Pedidos</div><h2 id="kpiPedidos">0</h2></div>
+      <div class="card"><div class="tag">Ticket promedio</div><h2 id="kpiTicket">$0.00</h2></div>
+      <div class="card"><div class="tag">Artículos en menú</div><h2 id="kpiMenu">0</h2></div>
+    </div>
+    <br/>
+    <div class="card p">
+      <h3>Agregar platillo</h3>
+      <div class="row" style="gap:8px;flex-wrap:wrap">
+        <input id="newName" placeholder="Nombre"/>
+        <input id="newPrice" type="number" min="0" step="0.01" placeholder="Precio"/>
+        <input id="newImg" placeholder="URL de imagen"/>
+        <input id="newDesc" placeholder="Descripción"/>
+        <select id="newCategory">
+          <option value="">-- Categoría --</option>
+          <option value="Tacos">Tacos</option>
+          <option value="Bebida">Bebida</option>
+          <option value="Postre">Postre</option>
+          <option value="Hamburguesa">Hamburguesa</option>
+        </select>
+        <button class="btn brand" id="addDishBtn">Agregar</button>
+      </div>
+    </div>
+    <div id="adminMenuListContainer"></div>
+  </section>
+</main>
+
+<!-- Modal reseñas -->
+<div class="modal" id="reviewModal">
+  <div class="modal-content">
+    <h3 id="modalTitle">Reseñas</h3>
+    <div id="reviewList"></div>
+    <textarea id="reviewInput" placeholder="Escribe tu reseña"></textarea>
+    <select id="reviewRating">
+      <option value="5">5⭐</option>
+      <option value="4">4⭐</option>
+      <option value="3">3⭐</option>
+      <option value="2">2⭐</option>
+      <option value="1">1⭐</option>
+    </select>
+    <button class="btn brand" id="sendReviewBtn">Enviar</button>
+    <button class="btn ghost" id="closeReviewBtn">Cerrar</button>
+  </div>
+</div>
+
+<footer class="container" style="padding:24px 0">
+  <div class="row"><small class="muted">© Restaurante Demo • Prototipo UI</small></div>
+</footer>
+
+<!-- ANIMACION -->
+
+<div class="cooking-animation">
+  <div class="pan">
+    <div class="egg"></div>
+  </div>
+  <div class="cooking-text">
+    <span id="animatedText"></span>
+  </div>
+</div>
+
+
+<!-- Vinculación JS -->
+<script src="js/script.js"></script>
+</body>
+</html>
+
+
+
+
