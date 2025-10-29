@@ -75,22 +75,13 @@ $('#InitSesionBtn').onclick = async () => {
       body: JSON.stringify({ usuario, password })
     });
 
-    const result = await response.json();
+    const result = await response.text();
 
-    if (!result.ok) {
-      alert(result.mensaje);
-      return;
+    if (!response.ok) {
+      alert(`❌ Error: ${result.replace(/<[^>]*>?/gm, '')}`);
+    } else {
+      document.body.innerHTML = result;
     }
-
-    // Mostrar mensaje de bienvenida y ocultar modal
-    alert(result.mensaje);
-    // Cambiar rol visualmente en el front
-
-    //$('#roleSelect').value = result.role;
-    //const state = result.role;
-   
-    // Ocultar el modal de inicio de sesión
-    $('#InicioSesion').style.display = 'none';
 
   } catch (error) {
     console.error('Error al enviar datos:', error);
