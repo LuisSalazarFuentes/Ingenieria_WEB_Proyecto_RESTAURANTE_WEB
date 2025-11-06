@@ -36,6 +36,15 @@ app.get('/', (req, res) => {
 
 
 
+
+
+
+
+
+
+
+
+
 //ENTRAR EN LA BASE DE DATOS Y BUSCAR EL USUARIO
 // Ruta protegida (requiere sesión)
 app.get('/bienvenido', (req, res) => {
@@ -58,6 +67,21 @@ app.get('/bienvenido', (req, res) => {
     res.json({ ok: true, usuario, rol }); 
   });
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // Login con validación + generación de token
 app.post('/login', (req, res) => {
@@ -92,29 +116,46 @@ app.post('/login', (req, res) => {
   }
 
   // Validación en MySQL
-  db.query('SELECT * FROM EMPLEADOS WHERE EMAIL = ?', [usuario], (err, results) => {
+  // Buscar primero en la tabla de EMPLEADOS
+  const queryEmpleado = 'SELECT * FROM EMPLEADOS WHERE EMAIL = ?';
+  db.query(queryEmpleado, [usuario], (err, empResults) => {
     if (err) {
-      console.error('Error al consultar MySQL:', err);
-      return res.json({ 
-        ok: false, 
-        mensaje: 'Error interno del servidor.' 
+      console.error('❌ Error al consultar EMPLEADOS:', err);
+      return res.json({
+        ok: false,
+        mensaje: 'Error interno del servidor.'
       });
     }
 
-    if (results.length === 0) {
-      return res.json({ 
-        ok: false, 
-        mensaje: '❌ Usuario no encontrado.' 
-      });
-    }
+    // Si NO está en EMPLEADOS, buscar en la tabla CLIENTES
+    if (empResults.length === 0) {
+      const queryCliente = 'SELECT * FROM CLIENTES WHERE EMAIL = ?';
+      db.query(queryCliente, [usuario], (err2, cliResults) => {
+        if (err2) {
+          console.error('❌ Error al consultar CLIENTES:', err2);
+          return res.json({
+            ok: false,
+            mensaje: 'Error interno del servidor.'
+          });
+        }
 
-    const user = results[0];
-    if (user.PASSWORD === password) {
+        // Si tampoco está en CLIENTES
+        if (cliResults.length === 0) {
+          return res.json({
+            ok: false,
+            mensaje: '❌ Usuario no encontrado.'
+          });
+        }
+
+        const cliente = cliResults[0];
+
+
+    if (cliente.PASSWORD === password) {
       // Generar token y guardar en BD
       const token = uuidv4();
-      db.query('UPDATE EMPLEADOS SET token_sesion = ? WHERE EMAIL = ?', [token, usuario], err2 => {
-        if (err2) {
-          console.error('❌ Error al guardar token:', err2);
+      db.query('UPDATE CLIENTES SET token_sesion = ? WHERE EMAIL = ?', [token, usuario], err3 => {
+        if (err3) {
+          console.error('❌ Error al guardar token:', err3);
           return res.json({ 
             ok: false, 
             mensaje: 'Error al guardar sesión.' 
@@ -127,19 +168,53 @@ app.post('/login', (req, res) => {
           maxAge: 1000 * 60 * 10 // 10 minutos
         });
 
-        res.json({
+        //Enviar respuesta JSON con rol de cliente
+        return res.json({ 
           ok: true,
-          mensaje: `✅ Bienvenido, ${user.NOMBRE || usuario}!`,
-          role: user.ROL || 'cliente'
+          mensaje: `✅ Bienvenido, ${cliente.NOMBRE || usuario}!`,
+          rol: 'Cliente' 
         });
       });
-    } else {
+    } 
+    else {
       res.json({ 
         ok: false, 
         mensaje: '❌ Contraseña incorrecta.' });
     }
   });
+  } else {
+      //Está en EMPLEADOS
+      const empleado = empResults[0];
+      if (empleado.PASSWORD === password) {
+        // Generar token
+        const token = uuidv4();
+        db.query('UPDATE EMPLEADOS SET token_sesion = ? WHERE EMAIL = ?', [token, usuario], err4 => {
+          if (err4) {
+            console.error('❌ Error al guardar token EMPLEADO:', err4);
+            return res.json({ ok: false, mensaje: 'Error al guardar sesión.' });
+          }
+
+          // Guardar cookie
+          res.cookie('token_sesion', token, {
+            httpOnly: true,
+            maxAge: 1000 * 60 * 10
+          });
+
+          // ✅ Enviar el rol real del empleado
+          return res.json({
+            ok: true,
+            mensaje: `✅ Bienvenido, ${empleado.NOMBRE || usuario}!`,
+            rol: empleado.ROL || 'Empleado'
+          });
+        });
+      } else {
+        res.json({ ok: false, mensaje: '❌ Contraseña incorrecta.' });
+      }
+    }
+  });
 });
+
+
 
 // Cerrar sesión
 app.get('/logout', (req, res) => {
@@ -150,6 +225,11 @@ app.get('/logout', (req, res) => {
   }
   res.redirect('/');
 });
+
+
+
+
+
 
 
 
