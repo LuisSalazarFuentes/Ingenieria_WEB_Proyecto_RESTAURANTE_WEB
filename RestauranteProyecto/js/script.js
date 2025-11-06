@@ -6,39 +6,6 @@ const storage = {
 const $ = s => document.querySelector(s);
 const fmt = n => n.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' });
 
-/*
-//AYUDA AL REINICIO DEMO, REGRESA AL ESTADO ORIGINAL
-// Datos iniciales
-const seedData = () => ({
-  menu: [
-    { id: 1, name: "Tacos al pastor", price: 25, available: true, desc: "Con piña y salsa verde", img: "imagenes/3-tacos-al-pastor.jpeg", category: "Tacos", reviews: [{ user: "Ana", rating: 5, text: "Deliciosos!" }] },
-    { id: 2, name: "Hamburguesa clásica", price: 89, available: true, desc: "Carne 150g, queso, jitomate", img: "imagenes/hamburguesa-clasica.jpg", category: "Hamburguesa", reviews: [{ user: "Sofia", rating: 5, text: "Llevare 3 mas!" }] },
-    { id: 3, name: "Agua de horchata", price: 25, available: true, desc: "500 ml", img: "imagenes/Agua_de_horchata.jpg", category: "Bebida", reviews: [{ user: "Juan", rating: 5, text: "Volveria por mas ((:!" }] }
-  ],
-  orders: [],
-  users: [{ id: 1, name: "Ana", role: "cliente", email: "ana@example.com" }]
-});
-*/
-
-//REINICIAR TODO, LIMPIA LO ALMACENADO EN EL NAVEGADOR 
-//TAMBIEN SE ENCARGA DE METERO TODO AL FRONT
-/*
-function resetDemo() {
-  const d = seedData();
-  storage.set('menu', d.menu);
-  storage.set('orders', d.orders);
-  storage.set('users', d.users);
-  state.cart = [];
-  state.filter = '';
-  state.currentReview = null;
-  renderAll();
-}
-*/
-
-
-
-
-
 
 
 
@@ -75,22 +42,27 @@ $('#InitSesionBtn').onclick = async () => {
       body: JSON.stringify({ usuario, password })
     });
 
-    const result = await response.json();
+    // P R O C E S A R   E L   J S O N   D E L   S E R V I D O R
+    const result = await response.json(); 
 
-    if (!result.ok) {
-      alert(result.mensaje);
-      return;
+    if (result.ok) {
+      // 1. Mostrar alerta de éxito (¡Aquí está el alert que quieres!)
+      alert(result.mensaje); 
+      
+      // 2. Ocultar modal
+      $('#InicioSesion').style.display = 'none';
+
+      // 3. Actualizar el estado con el rol de la BD
+      setRole(result.rol); // Usar el rol de la respuesta
+      renderAll();
+      
+      // 4. Actualizar el botón de encabezado (Cerrar Sesión)
+      checkSession(); // Re-ejecutar para actualizar el botón
+      
+    } else {
+      // Mostrar alerta de error (del servidor o de validación)
+      alert(`❌ Error: ${result.mensaje}`);
     }
-
-    // Mostrar mensaje de bienvenida y ocultar modal
-    alert(result.mensaje);
-    // Cambiar rol visualmente en el front
-
-    //$('#roleSelect').value = result.role;
-    //const state = result.role;
-   
-    // Ocultar el modal de inicio de sesión
-    $('#InicioSesion').style.display = 'none';
 
   } catch (error) {
     console.error('Error al enviar datos:', error);
@@ -104,7 +76,7 @@ $('#CloseSesionBtn').onclick = () => $('#InicioSesion').style.display = 'none';
 // MODIFICAR PARA QUE MUESTRE EL ROL QUE ESTA EN LA BASE DE DATOS SEGUN SU CORREO
 
 const state = {
-  role: $('#roleSelect')?.value || 'cliente',
+  role: 'Cliente',
   cart: [],
   filter: '',
   currentReview: null
@@ -115,9 +87,9 @@ const state = {
 
 function setRole(r) {
   state.role = r;
-  $('#cliente-app').hidden = r !== 'cliente';
-  $('#vendedor-app').hidden = r !== 'vendedor';
-  $('#admin-app').hidden = r !== 'admin';
+  $('#cliente-app').hidden = r !== 'Cliente';
+  $('#vendedor-app').hidden = r !== 'Vendedor';
+  $('#admin-app').hidden = r !== 'Administrador';
 }
 
 
@@ -454,10 +426,14 @@ function renderAdminMenuList() {
   panel.className = 'card p';
   panel.innerHTML = `
     <h3>Eliminar platillo</h3>` + (menu.length ? menu.map(m => `
+
     <div class="row" style="margin:4px 0; align-items:center; justify-content:space-between">
+      
       <span style="flex:1">${m.name} (${fmt(m.price)})</span>
+      
       <button class="btn ghost" data-del="${m.id}">Eliminar</button>
-    </div>`).join('') : '<div class="muted">No hay platillos en el menú.</div>');
+    
+      </div>`).join('') : '<div class="muted">No hay platillos en el menú.</div>');
   container.appendChild(panel);
 
   panel.onclick = (e) => {
@@ -506,8 +482,9 @@ function renderAll() {
   renderClientOrders();
 }
 
+
 // ---------- UI bindings ---------- 
-$('#roleSelect').addEventListener('change', e => { setRole(e.target.value); renderAll(); });
+//$('#roleSelect').addEventListener('change', e => { setRole(e.target.value); renderAll(); });
 $('#seedBtn').addEventListener('click', OpenInitSesion);
 $('#checkoutBtn').addEventListener('click', checkout);
 
@@ -515,7 +492,7 @@ $('#checkoutBtn').addEventListener('click', checkout);
 if (!localStorage.getItem('menu')) resetDemo();
 else {
   // asegurar que role inicial coincide con el select
-  state.role = $('#roleSelect').value || 'cliente';
+  //state.role = $('#roleSelect').value || 'cliente';
   renderAll();
 }
 
