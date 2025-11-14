@@ -45,6 +45,31 @@ app.get('/', (req, res) => {
 
 
 
+//Validación de usuario y password
+function validarCredenciales(usuario, password) {
+  const regexCorreo = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const regexMayus = /[A-Z]/;
+  const regexMinus = /[a-z]/;
+  const regexNumero = /[0-9]/;
+
+  let errores = [];
+
+  if (!regexCorreo.test(usuario)) errores.push("El usuario debe ser un correo válido.");
+  if (!regexMayus.test(password)) errores.push("La contraseña debe tener mínimo 1 mayúscula.");
+  if (!regexMinus.test(password)) errores.push("La contraseña debe tener mínimo 1 minúscula.");
+  if (!regexNumero.test(password)) errores.push("La contraseña debe tener mínimo 1 número.");
+  if (password.length < 8) errores.push(`Faltan ${8 - password.length} caracteres para alcanzar 8.`);
+
+  return errores;
+}
+
+
+
+
+
+
+
+
 //ENTRAR EN LA BASE DE DATOS Y BUSCAR EL USUARIO
 // Ruta protegida (requiere sesión)
 app.get('/bienvenido', (req, res) => {
@@ -82,6 +107,67 @@ app.get('/bienvenido', (req, res) => {
 
 
 
+app.post('/crearCuenta', (req, res) => {
+  const { RegUsuario, RegPassword, RegNombre } = req.body;
+
+  if (!RegUsuario || !RegPassword || !RegNombre) {
+    return res.json({
+      ok: false,
+      mensaje: "❌ Faltan datos para crear la cuenta."
+    });
+  }
+
+  // 🔍 Revisar requisitos con la función que ya tienes
+  const errores = validarCredenciales(RegUsuario, RegPassword);
+
+  if (errores.length > 0) {
+    return res.json({
+      ok: false,
+      mensaje: errores.join('\n')
+    });
+  }
+
+  // 👍 Si todo está bien, revisar si el usuario ya existe
+  const queryExiste = "SELECT * FROM CLIENTES WHERE EMAIL = ?";
+  db.query(queryExiste, [RegUsuario], (err, results) => {
+    if (err) {
+      console.error("❌ Error al consultar CLIENTES:", err);
+      return res.json({
+        ok: false,
+        mensaje: "Error interno del servidor."
+      });
+    }
+
+    if (results.length > 0) {
+      return res.json({
+        ok: false,
+        mensaje: "❌ Este correo ya está registrado."
+      });
+    }
+
+    // Insertar en BD
+    const queryInsert = "INSERT INTO CLIENTES (NOMBRE, EMAIL, PASSWORD) VALUES (?, ?, ?)";
+    db.query(queryInsert, [RegNombre, RegUsuario, RegPassword], (err2) => {
+      if (err2) {
+        console.error("❌ Error al crear cuenta:", err2);
+        return res.json({
+          ok: false,
+          mensaje: "Error al registrar usuario."
+        });
+      }
+
+      return res.json({
+        ok: true,
+        mensaje: `✅ Cuenta creada correctamente. Bienvenido, ${RegNombre}!`
+      });
+    });
+  });
+});
+
+
+
+
+
 
 // Login con validación + generación de token
 app.post('/login', (req, res) => {
@@ -94,19 +180,7 @@ app.post('/login', (req, res) => {
     });
   }
 
-  const regexCorreo = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const regexMayus = /[A-Z]/;
-  const regexMinus = /[a-z]/;
-  const regexNumero = /[0-9]/;
-
-  let errores = [];
-
-  // Validar correo y contraseña
-  if (!regexCorreo.test(usuario)) errores.push("El usuario debe ser un correo válido.");
-  if (!regexMayus.test(password)) errores.push("La contraseña debe tener mínimo 1 mayúscula.");
-  if (!regexMinus.test(password)) errores.push("La contraseña debe tener mínimo 1 minúscula.");
-  if (!regexNumero.test(password)) errores.push("La contraseña debe tener mínimo 1 número.");
-  if (password.length < 8) errores.push(`Faltan ${8 - password.length} caracteres para alcanzar 8.`);
+  const errores = validarCredenciales(usuario,password)
 
   if (errores.length > 0) {
     return res.json({ 
@@ -146,11 +220,16 @@ app.post('/login', (req, res) => {
             mensaje: '❌ Usuario no encontrado.'
           });
         }
-
         const cliente = cliResults[0];
 
-
-    if (cliente.PASSWORD === password) {
+    //validar contraseña
+    if (cliente.PASSWORD !== password) {
+      return res.json({ 
+        ok: false, 
+        mensaje: '❌ Contraseña incorrecta.' 
+      });
+    }
+    
       // Generar token y guardar en BD
       const token = uuidv4();
       db.query('UPDATE CLIENTES SET token_sesion = ? WHERE EMAIL = ?', [token, usuario], err3 => {
@@ -175,42 +254,42 @@ app.post('/login', (req, res) => {
           rol: 'Cliente' 
         });
       });
-    } 
-    else {
-      res.json({ 
-        ok: false, 
-        mensaje: '❌ Contraseña incorrecta.' });
-    }
-  });
-  } else {
-      //Está en EMPLEADOS
-      const empleado = empResults[0];
-      if (empleado.PASSWORD === password) {
-        // Generar token
-        const token = uuidv4();
-        db.query('UPDATE EMPLEADOS SET token_sesion = ? WHERE EMAIL = ?', [token, usuario], err4 => {
-          if (err4) {
-            console.error('❌ Error al guardar token EMPLEADO:', err4);
-            return res.json({ ok: false, mensaje: 'Error al guardar sesión.' });
-          }
+    });
+    
+    return;
+  }  
+  //Está en EMPLEADOS
+  const empleado = empResults[0];
+  if (empleado.PASSWORD !== password) {
+    return res.json({ 
+      ok: false, 
+      mensaje: '❌ Contraseña incorrecta.' 
+    });
+  }
+  const token = uuidv4();
 
-          // Guardar cookie
-          res.cookie('token_sesion', token, {
-            httpOnly: true,
-            maxAge: 1000 * 60 * 10
-          });
-
-          // ✅ Enviar el rol real del empleado
-          return res.json({
-            ok: true,
-            mensaje: `✅ Bienvenido, ${empleado.NOMBRE || usuario}!`,
-            rol: empleado.ROL || 'Empleado'
-          });
+    db.query('UPDATE EMPLEADOS SET token_sesion = ? WHERE EMAIL = ?', [token, usuario], err4 => {
+      if (err4) {
+        console.error('❌ Error al guardar token EMPLEADO:', err4);
+        return res.json({ 
+          ok: false, 
+          mensaje: 'Error al guardar sesión.' 
         });
-      } else {
-        res.json({ ok: false, mensaje: '❌ Contraseña incorrecta.' });
       }
-    }
+
+      // Guardar cookie
+      res.cookie('token_sesion', token, {
+        httpOnly: true,
+        maxAge: 1000 * 60 * 10
+      });
+
+      // ✅ Enviar el rol real del empleado
+      return res.json({
+        ok: true,
+        mensaje: `✅ Bienvenido, ${empleado.NOMBRE || usuario}!`,
+        rol: empleado.ROL || 'Empleado'
+      });
+    });    
   });
 });
 
