@@ -1,3 +1,4 @@
+
 //MODIFICAR PARA QUE INICIA LA BASE DE DATOS Y GURADE EN BASE DE DATOS 
 const storage = {
   get: (k, f) => { try { return JSON.parse(localStorage.getItem(k)) ?? f } catch { return f } },
@@ -7,6 +8,9 @@ const $ = s => document.querySelector(s);
 const fmt = n => n.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' });
 
 
+function mostrarMensaje(texto) {
+  alert(texto);
+}
 
 
 
@@ -18,20 +22,76 @@ const fmt = n => n.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' 
 
 
 
-// seccion cliente
-//INICIO DE SESION
-function OpenInitSesion()
-{
+
+
+
+
+
+
+
+
+
+
+//ABRIR LOGIN
+function OpenInitSesion(){
   $('#InitCorreo').value = '';
   $('#InitContraseña').value = '';
   $('#InicioSesion').style.display = 'grid';
 }
+//ABRIR CREAR CUENTA
+function OpenCrearCuenta(){
+  $('#RegCorreo').value = '';
+  $('#RegContraseña').value = '';
+  $('#RegNombre').value = '';
+  $('#CrearCuenta').style.display = 'grid';
+}
+//CERRAR VENTANAS
+function CerrarModales() {
+  $('#InicioSesion').style.display = 'none';
+  $('#CrearCuenta').style.display = 'none';
+}
+
+
+
+
+//CERRA LOGIN
+$('#CloseSesionBtn').onclick = () => $('#InicioSesion').style.display = 'none';
+//CERRAR CREAR CUENTA
+$('#CerrarCrearBtn').onclick = () => $('#CrearCuenta').style.display = 'none';
+
+
+
+//Validacion de datos
+function validarPassword(password) {
+  const regexCorreo = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const regexMayus = /[A-Z]/;
+  const regexMinus = /[a-z]/;
+  const regexNumero = /[0-9]/;
+
+  let errores = [];
+
+  if (!regexMayus.test(password)) errores.push("La contraseña debe tener mínimo 1 mayúscula.");
+  if (!regexMinus.test(password)) errores.push("La contraseña debe tener mínimo 1 minúscula.");
+  if (!regexNumero.test(password)) errores.push("La contraseña debe tener mínimo 1 número.");
+  if (password.length < 8) errores.push(`Faltan ${8 - password.length} caracteres para alcanzar 8.`);
+
+  return errores;
+}
+
+
+
+
+
+
+
+
+//INICIO DE SESION
 $('#InitSesionBtn').onclick = async () => {
   const usuario = $('#InitCorreo').value.trim();
   const password = $('#InitContraseña').value.trim();
 
   if (!usuario || !password) {
-    alert('⚠️ Por favor, completa todos los campos.');
+    mostrarMensaje("❌ Ingresa tu usuario y contraseña.");
     return;
   }
 
@@ -44,32 +104,88 @@ $('#InitSesionBtn').onclick = async () => {
 
     // P R O C E S A R   E L   J S O N   D E L   S E R V I D O R
     const result = await response.json(); 
+    mostrarMensaje(result.mensaje);
 
     if (result.ok) {
-      // 1. Mostrar alerta de éxito (¡Aquí está el alert que quieres!)
-      alert(result.mensaje); 
-      
-      // 2. Ocultar modal
-      $('#InicioSesion').style.display = 'none';
 
-      // 3. Actualizar el estado con el rol de la BD
+      //ACTUALIZAR EL RENDER SEGUN EL ROL DE LA BASE DE DATOS
+      //NO MODIFICAR ESTE SE ENCARGA DEL RENDERIZADO SEGUN EL ROL DE CADA PERFIL
       setRole(result.rol); // Usar el rol de la respuesta
-      renderAll();
       
-      // 4. Actualizar el botón de encabezado (Cerrar Sesión)
-      checkSession(); // Re-ejecutar para actualizar el botón
-      
-    } else {
-      // Mostrar alerta de error (del servidor o de validación)
-      alert(`❌ Error: ${result.mensaje}`);
+      //OCULTAR MODAL O VENTANA
+      CerrarModales();
+
+    }
+  } catch (error) {
+    console.error('Error al enviar datos:', error);
+    mostrarMensaje('⚠️ Error al conectar con el servidor.');
+  }
+};
+
+
+
+
+
+
+//CREAR CUENTA
+$('#CrearCuentaBtn').onclick = async () => {
+  const RegUsuario = $('#RegCorreo').value.trim();
+  const RegPassword = $('#RegContraseña').value.trim();
+  const RegNombre = $('#RegNombre').value.trim();
+
+  if (!RegUsuario || !RegPassword || !RegNombre) {
+    mostrarMensaje("❌ Todos los campos son obligatorios.");
+    return;
+  }
+
+  if (!validarPassword(RegPassword)) {
+    mostrarMensaje("❌ La contraseña no cumple los requisitos.");
+    return;
+  }
+
+  try {
+    const respuesta = await fetch('/crearCuenta', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ RegUsuario, RegPassword, RegNombre })
+    });
+
+    const result = await respuesta.json();
+    mostrarMensaje(result.mensaje);
+
+    if (result.ok) {
+      // Cierra registro
+      CerrarModales();
+
+      // Abre login automáticamente
+      OpenInitSesion();
     }
 
   } catch (error) {
-    console.error('Error al enviar datos:', error);
-    alert('⚠️ Error al conectar con el servidor.');
+    console.error("Error al crear cuenta:", error);
+    mostrarMensaje("❌ Error de conexión con el servidor.");
   }
 };
-$('#CloseSesionBtn').onclick = () => $('#InicioSesion').style.display = 'none';
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 // revisa que rol es y selecciona rol 
@@ -203,10 +319,12 @@ function checkout() {
 function renderClientOrders() {
   const orders = storage.get('orders', []);
 
-  // insert below the menu (left column)
-  const leftColumn = $('#menuGrid')?.parentElement;
-  if (!leftColumn) return;
-  const existing = $('#clientOrders');
+  // Insertar pedidos dentro del aside (bajo Confirmar pedido)
+  const aside = document.querySelector('.aside .p');
+  if (!aside) return;
+
+  // Eliminar si ya existe
+  const existing = document.getElementById('clientOrders');
   if (existing) existing.remove();
 
   const cont = document.createElement('div');
@@ -215,7 +333,7 @@ function renderClientOrders() {
 
   // AGREGA SECION DE MIS PEDIDOS Y LOS PEDIDOS ORDENADOS
   cont.innerHTML = `
-    <h3>Mis pedidos</h3>` + (orders.length ? orders.map(o => `
+    <h3>Mis pedidos</h3>${orders.length? orders.map((o) => `
     
     <div class="card p" style="margin:8px 0">
       
@@ -227,8 +345,8 @@ function renderClientOrders() {
       
       <div style="margin-top:6px"><strong>Total:</strong> ${fmt(o.total)}</div>
     
-    </div>`).join('') : '<div class="muted">No has realizado pedidos todavía.</div>');
-  leftColumn.appendChild(cont);
+    </div>`).join('') : '<div class="muted">No has realizado pedidos todavía.</div>'}`;
+  aside.appendChild(cont);
 }
 
 
@@ -484,12 +602,14 @@ function renderAll() {
 
 
 // ---------- UI bindings ---------- 
-//$('#roleSelect').addEventListener('change', e => { setRole(e.target.value); renderAll(); });
 $('#seedBtn').addEventListener('click', OpenInitSesion);
+$('#RegistrarBtn').addEventListener('click',OpenCrearCuenta);
 $('#checkoutBtn').addEventListener('click', checkout);
 
 // ---------- Inicialización ---------- 
-if (!localStorage.getItem('menu')) resetDemo();
+if (!localStorage.getItem('menu')){ 
+  resetDemo();
+}
 else {
   // asegurar que role inicial coincide con el select
   //state.role = $('#roleSelect').value || 'cliente';
