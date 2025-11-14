@@ -14,16 +14,19 @@
   <div class="container row">
     <div class="brand"><div class="logo">🍔</div>RATATOUILLE: ¡DE TODO UN POCO!</div>
     <div class="row" style="gap:8px">
-
-      <span class="chip">Rol:
+      
+      <span class="chip">OPCIONES:
         <select id="roleSelect">
-          <option value="cliente">Cliente</option>
-          <option value="vendedor">Vendedor</option>
-          <option value="admin">Administrador</option>
+          <option value="Menu">Menu</option>
+          <option value="MisPedidos">Mis Pedidos</option>
+          <option value="MiDireccion">Mi Direccion</option>
+          <option value="CerrarSesion">Cerrar Sesion</option>
         </select>
       </span>
-      
+
       <button class="btn brand" id="seedBtn">Iniciar Sesion</button>
+      <button class="btn brand" id="RegistrarBtn">Crear Cuenta</button>
+
     </div>
   </div>
 </header>
@@ -31,7 +34,43 @@
 
 
 
+<!--Inicio de sesion-->
+<div class="modal" id="InicioSesion">
+  <div class="modal-content">
+      <h3>Inicio de Sesion</h3>
+      <input id="InitCorreo" placeholder="Escribe tu Correo">
+      <input id="InitContraseña" placeholder="Escribe tu Contraseña">
+      <button class="btn brand" id="InitSesionBtn">Iniciar Sesion</button>
 
+      <hr style="margin: 16px 0; border: 0; border-top: 1px solid var(--muted);">
+      <button class="btn ghost" id="CloseSesionBtn">Cerrar Ventana</button>
+
+  </div>
+</div>
+
+
+<!--Crear Cuenta-->
+<div class="modal" id="CrearCuenta">
+  <div class="modal-content">
+      
+    <h3>Crea una Cuenta</h3>
+
+      <h5>Ingresa tu Nombre</h5>
+      <input id="RegNombre" placeholder="Ingresa un Nombre">
+      
+      <h5>Ingresa un Correo valido</h5>
+      <input id="RegCorreo" placeholder="Ingresa un Correo">
+      
+      <h5>Ingresa una Contraseña que cumpla lo siguiente: 8 caracteres, 1 Mayuscula, 1 minuscula, 1 numero</h5>
+      <input id="RegContraseña" placeholder="Ingresa una Contraseña">
+      
+      <button class="btn brand" id="CrearCuentaBtn">Crear Cuenta</button>
+      
+      <hr style="margin: 16px 0; border: 0; border-top: 1px solid var(--muted);">
+      <button class="btn ghost" id="CerrarCrearBtn">Cerrar Ventana</button>
+
+  </div>
+</div>
 
 
 
@@ -41,14 +80,18 @@
   <!-- CLIENTE -->
   <section id="cliente-app" hidden>
     <div class="filter-bar" id="filterBar"></div>
+
+    <!--Distribucion principal-->
     <div class="layout">
+      
+      <!--MENU-->
       <div>
         <h2>Menú</h2>
         <div class="grid menu" id="menuGrid"></div>
       </div>
-      
+
+      <!-- SECCION PÁRA CONFIRMAR MI PEDIDO-->
       <aside class="aside card">
-        <!-- SECCION ÁRA CONFIRMAR MI PEDIDO-->
         <div class="p">
           <!-- TITULO -->
           <h3>Carrito</h3>
@@ -71,11 +114,38 @@
     </div>
   </section>
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   <!-- VENDEDOR -->
   <section id="vendedor-app" hidden>
     <h2>Pedidos entrantes</h2>
     <div class="grid" id="ordersGrid"></div>
   </section>
+
+
+
+
+
+
+
+
+
+
+
 
   <!-- ADMIN -->
   <section id="admin-app" hidden>
@@ -136,16 +206,6 @@
 </div>
 
 
-<!--Inicio de sesion-->
-<div class="modal" id="InicioSesion">
-  <div class="modal-content">
-      <h3>Inicio de Sesion</h3>
-      <textarea id="InitCorreo" placeholder="Escribe tu Correo"></textarea>
-      <textarea id="InitContraseña" placeholder="Escribe tu Contraseña"></textarea>
-      <button class="btn brand" id="InitSesionBtn">Iniciar</button>
-      <button class="btn ghost" id="CloseSesionBtn">Cerrar</button>
-  </div>
-</div>
 
 
 
