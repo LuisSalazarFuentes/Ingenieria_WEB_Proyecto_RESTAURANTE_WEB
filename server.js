@@ -12,7 +12,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname)));
 
-// Conexión MySQL
+// Conexión MySQL donde cada usuario por separado pueden agrergar su BD para pruebas
 const db = mysql.createConnection({
   host: 'localhost',
   user: 'root',
