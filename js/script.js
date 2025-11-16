@@ -312,7 +312,7 @@ function renderAdminMenuList() {
   };
 }
 
-// ----------------- CARGA DESDE MYSQL -----------------
+// ----------------- CARGA DESDE MYSQL DATOS DE PRUEBA -----------------
 // Trae los platillos desde el backend
 async function cargarPlatillos() {
   try {
