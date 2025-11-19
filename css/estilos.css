@@ -1,64 +1,300 @@
-:root{
-  --bg:#0b0f10;--card:#12181a;--card-2:#1a2224;--muted:#9fb0b7;--text:#e6f0f3;
-  --brand:#76e2c6;--acc:#ffd166;--radius:16px;--shadow:0 10px 30px rgba(0,0,0,.25)
+/* =========================================================
+   VARIABLES
+========================================================= */
+:root {
+  --bg: #0b0f10;
+  --card: #12181a;
+  --card-2: #1a2224;
+  --muted: #9fb0b7;
+  --text: #e6f0f3;
+  --brand: #76e2c6;
+  --acc: #ffd166;
+  --radius: 16px;
+  --shadow: 0 10px 30px rgba(0,0,0,.25);
 }
-*{box-sizing:border-box} 
-html,body{height:100%;margin:0;font-family:ui-sans-serif,system-ui,Segoe UI,Roboto,Ubuntu,sans-serif;color:var(--text);background:linear-gradient(120deg,#0b0f10 0%,#0e1315 100%)}
-header{position:sticky;top:0;z-index:20;background:rgba(10,14,16,.7);backdrop-filter:blur(8px);border-bottom:1px solid #1f2a2e}
-.container{max-width:1200px;margin:0 auto;padding:20px}
-.brand{display:flex;align-items:center;gap:12px;font-weight:800;letter-spacing:.4px}
-.brand .logo{width:36px;height:36px;border-radius:12px;display:grid;place-items:center;background:linear-gradient(135deg,var(--brand),#48a7ff);color:#073b4c;font-weight:900}
-.row{display:flex;align-items:center;justify-content:space-between;gap:12px}
-select,input,button,textarea{border:1px solid #213036;background:var(--card-2);color:var(--text);padding:10px 12px;border-radius:12px}
-button{cursor:pointer;transition:transform .05s ease,opacity .15s ease;box-shadow:var(--shadow);border-color:#2b3d44}
-button:hover{opacity:.95} button:active{transform:translateY(1px)}
-.btn{background:linear-gradient(135deg,#1e2a2e,#1b2529)}
-.btn.brand{background:linear-gradient(135deg,var(--brand),#55d6a8);color:#063b2f;border:none}
-.btn.acc{background:linear-gradient(135deg,var(--acc),#f8b84e);color:#2b2110;border:none}
-.btn.ghost{background:transparent;border:1px dashed #2e4046}
-.chip{display:inline-flex;gap:8px;align-items:center;padding:8px 12px;border-radius:999px;background:#0f1517;border:1px solid #1f2a2e;color:var(--muted)}
-main{padding:24px 0}
-.grid{display:grid;gap:16px}
-.grid.menu{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
-.card{background:linear-gradient(180deg,#12181a,#0f1416);border:1px solid #1f2a2e;border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;transition:transform .15s}
-.card:hover{transform:scale(1.03)}
-.card img{width:100%;height:120px;object-fit:cover;border-top-left-radius:var(--radius);border-top-right-radius:var(--radius)}
-.card .p{padding:16px}
-.card h3{margin:.4rem 0 0.1rem}
-.muted{color:var(--muted)}
-.price{font-weight:800}
-.layout{display:grid;grid-template-columns:1fr;gap:20px}
-@media(min-width:980px){.layout{grid-template-columns:2fr 1fr}}
-.aside{position:sticky;top:84px;height:fit-content}
-.table{width:100%;border-collapse:collapse}
-.table th,.table td{padding:10px;border-bottom:1px solid #1f2a2e;text-align:left}
-.status{font-size:.8rem;padding:4px 10px;border-radius:999px;border:1px solid #2b3d44;color:var(--muted);background:#0f1517}
-.status.pend{border-color:#3b5060}
-.status.prep{border-color:#48a7ff}
-.status.ready{border-color:var(--acc)}
-.status.done{border-color:var(--brand)}
-.kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-.kpi .card{padding:16px;text-align:center}
-.kpi h2{margin:0;font-size:1.6rem}
-.tag{font-size:.75rem;color:var(--muted)}
-.category{font-size:.7rem;padding:2px 6px;border-radius:8px;background:#213036;color:#76e2c6;margin-right:6px;display:inline-block}
-.filter-bar{margin-bottom:12px;display:flex;gap:6px;flex-wrap:wrap}
-.filter-btn{cursor:pointer;padding:4px 8px;border-radius:12px;border:1px solid #2b3d44;background:#12181a;color:var(--text)}
-.filter-btn.active{background:var(--brand);color:#073b4c;border:none}
-.modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.7);display:grid;place-items:center;z-index:999;display:none}
-.modal .modal-content{background:var(--card);padding:20px;border-radius:var(--radius);width:90%;max-width:500px;max-height:80%;overflow-y:auto}
-.review-item{border-top:1px solid #1f2a2e;padding-top:6px;margin-top:6px}
-.star{color:gold;margin-right:2px}
 
+/* =========================================================
+   RESET & BASE
+========================================================= */
+* { box-sizing: border-box; }
 
-/* Ajustes para modal de reseñas */
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: ui-sans-serif, system-ui, Segoe UI, Roboto, Ubuntu, sans-serif;
+  color: var(--text);
+  background: linear-gradient(120deg, #0b0f10 0%, #0e1315 100%);
+}
+
+header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: rgba(10,14,16,.7);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid #1f2a2e;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* =========================================================
+   BRAND
+========================================================= */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-weight: 800;
+  letter-spacing: .4px;
+}
+
+.brand .logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, var(--brand), #48a7ff);
+  color: #073b4c;
+  font-weight: 900;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* =========================================================
+   FORM ELEMENTS & BUTTONS
+========================================================= */
+select,
+input,
+button,
+textarea {
+  border: 1px solid #213036;
+  background: var(--card-2);
+  color: var(--text);
+  padding: 10px 12px;
+  border-radius: 12px;
+}
+
+button {
+  cursor: pointer;
+  transition: transform .05s ease, opacity .15s ease;
+  box-shadow: var(--shadow);
+  border-color: #2b3d44;
+}
+
+button:hover { opacity: .95; }
+button:active { transform: translateY(1px); }
+
+.btn {
+  background: linear-gradient(135deg, #1e2a2e, #1b2529);
+}
+
+.btn.brand {
+  background: linear-gradient(135deg, var(--brand), #55d6a8);
+  color: #063b2f;
+  border: none;
+}
+
+.btn.acc {
+  background: linear-gradient(135deg, var(--acc), #f8b84e);
+  color: #2b2110;
+  border: none;
+}
+
+.btn.ghost {
+  background: transparent;
+  border: 1px dashed #2e4046;
+}
+
+/* =========================================================
+   COMMON ELEMENTS
+========================================================= */
+.chip {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #0f1517;
+  border: 1px solid #1f2a2e;
+  color: var(--muted);
+}
+
+main { padding: 24px 0; }
+
+.muted { color: var(--muted); }
+.price { font-weight: 800; }
+
+/* =========================================================
+   GRID & CARDS
+========================================================= */
+.grid {
+  display: grid;
+  gap: 16px;
+}
+
+.grid.menu {
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+}
+
+.card {
+  background: linear-gradient(180deg, #12181a, #0f1416);
+  border: 1px solid #1f2a2e;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  transition: transform .15s;
+}
+
+.card:hover { transform: scale(1.03); }
+
+.card img {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  border-top-left-radius: var(--radius);
+  border-top-right-radius: var(--radius);
+}
+
+.card .p { padding: 16px; }
+.card h3 { margin: .4rem 0 0.1rem; }
+
+/* =========================================================
+   TABLES
+========================================================= */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: 10px;
+  border-bottom: 1px solid #1f2a2e;
+  text-align: left;
+}
+
+/* =========================================================
+   STATUS TAGS
+========================================================= */
+.status {
+  font-size: .8rem;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid #2b3d44;
+  color: var(--muted);
+  background: #0f1517;
+}
+
+.status.pend { border-color: #3b5060; }
+.status.prep { border-color: #48a7ff; }
+.status.ready { border-color: var(--acc); }
+.status.done { border-color: var(--brand); }
+
+/* =========================================================
+   KPI
+========================================================= */
+.kpi {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.kpi .card {
+  padding: 16px;
+  text-align: center;
+}
+
+.kpi h2 {
+  margin: 0;
+  font-size: 1.6rem;
+}
+
+.tag {
+  font-size: .75rem;
+  color: var(--muted);
+}
+
+/* =========================================================
+   MENU CATEGORIES & FILTERS
+========================================================= */
+.category {
+  font-size: .7rem;
+  padding: 2px 6px;
+  border-radius: 8px;
+  background: #213036;
+  color: #76e2c6;
+  margin-right: 6px;
+  display: inline-block;
+}
+
+.filter-bar {
+  margin-bottom: 12px;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.filter-btn {
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 12px;
+  border: 1px solid #2b3d44;
+  background: #12181a;
+  color: var(--text);
+}
+
+.filter-btn.active {
+  background: var(--brand);
+  color: #073b4c;
+  border: none;
+}
+
+/* =========================================================
+   MODALS
+========================================================= */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,.7);
+  display: none;
+  place-items: center;
+  z-index: 999;
+}
+
 .modal .modal-content {
+  background: var(--card);
+  padding: 20px;
+  border-radius: var(--radius);
+  width: 90%;
+  max-width: 500px;
+  max-height: 80%;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 12px; /* espacio entre los hijos */
+  gap: 12px;
 }
 
-/* Lista de reseñas */
+.review-item {
+  border-top: 1px solid #1f2a2e;
+  padding-top: 6px;
+  margin-top: 6px;
+}
+
+.star { color: gold; margin-right: 2px; }
+
 #reviewList {
   max-height: 200px;
   overflow-y: auto;
@@ -68,27 +304,63 @@ main{padding:24px 0}
   background: var(--card-2);
 }
 
-/* Caja de texto */
 #reviewInput {
   width: 100%;
   min-height: 80px;
   resize: vertical;
 }
 
-/* Select de estrellas */
-#reviewRating {
-  width: fit-content;
-}
+#reviewRating { width: fit-content; }
 
-/* Botones dentro del modal */
 .modal-content .btn {
   width: 100%;
   text-align: center;
 }
 
+/* =========================================================
+   LAYOUT
+========================================================= */
+.layout {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+  align-items: flex-start;
+}
 
-/*ANIMACION DE PREPARACION DE COMIDA*/
+.menu-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
 
+.aside {
+  position: sticky;
+  top: 84px;
+  height: fit-content;
+  background: var(--card);
+  border: 1px solid #1f2a2e;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+@media (max-width: 980px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .aside {
+    position: static;
+    width: 100%;
+  }
+}
+
+/* =========================================================
+   COOKING ANIMATION
+========================================================= */
 .cooking-animation {
   position: fixed;
   bottom: 20px;
@@ -96,7 +368,6 @@ main{padding:24px 0}
   width: 200px;
   z-index: 999;
   text-align: center;
-  font-family: sans-serif;
   color: #ffd166;
 }
 
@@ -105,7 +376,7 @@ main{padding:24px 0}
   width: 120px;
   height: 60px;
   margin: 0 auto;
-  background: radial-gradient(circle at 50% 50%, #333 40%, #111 100%);
+  background: radial-gradient(circle, #333 40%, #111 100%);
   border-radius: 50% 50% 45% 45% / 40% 40% 60% 60%;
   overflow: hidden;
   box-shadow: 0 4px 8px rgba(0,0,0,0.5);
@@ -115,7 +386,7 @@ main{padding:24px 0}
   position: absolute;
   width: 30px;
   height: 30px;
-  background: radial-gradient(circle at 50% 50%, #fff 50%, #ffeb3b 60%);
+  background: radial-gradient(circle, #fff 50%, #ffeb3b 60%);
   border-radius: 50%;
   bottom: 10px;
   left: 10px;
@@ -123,7 +394,7 @@ main{padding:24px 0}
 }
 
 @keyframes jump {
-  0%, 100% { transform: translate(0,0) rotate(0deg); }
+  0%, 100% { transform: translate(0,0) rotate(0); }
   25% { transform: translate(20px,-10px) rotate(10deg); }
   50% { transform: translate(40px,0) rotate(-10deg); }
   75% { transform: translate(20px,-5px) rotate(5deg); }
@@ -145,3 +416,214 @@ main{padding:24px 0}
   50% { transform: translateY(-5px); }
 }
 
+/* =========================================================
+   AVATAR SELECTOR
+========================================================= */
+#avatarSelector label img.selected {
+  border-color: var(--brand);
+}
+
+/* =========================================================
+   ADMIN USER LIST
+========================================================= */
+#AdminUsersSection {
+  padding: 20px;
+}
+
+#AdminUsersSection h2 {
+  margin-bottom: 16px;
+}
+
+.userCard {
+  background: #fff;
+  padding: 14px;
+  border-radius: 14px;
+  box-shadow: 0px 0px 5px rgba(0,0,0,0.12);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.userCard img {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  border: 2px solid var(--acc);
+}
+
+.userCard button {
+  margin-left: auto;
+  padding: 6px 10px;
+}
+
+/* =========================================================
+   MODAL DE CREAR CUENTA — ESTILO MEJORADO
+========================================================= */
+
+#CrearCuenta .modal-content {
+  padding: 28px;
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  background: linear-gradient(180deg, #151b1d, #101416);
+  border: 1px solid #1f2a2e;
+  animation: showModal 0.25s ease-out;
+}
+
+@keyframes showModal {
+  from { transform: translateY(-20px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+
+#CrearCuenta h3 {
+  margin: 0;
+  text-align: center;
+  font-size: 1.4rem;
+  letter-spacing: 0.5px;
+}
+
+#CrearCuenta h5 {
+  margin: 6px 0 4px;
+  font-weight: 600;
+  color: var(--brand);
+  font-size: 0.9rem;
+}
+
+#CrearCuenta input {
+  padding: 12px;
+  border-radius: 14px;
+  background: var(--card-2);
+  border: 1px solid #29383d;
+  color: var(--text);
+  transition: border 0.2s, background 0.2s;
+}
+
+#CrearCuenta input:focus {
+  outline: none;
+  border-color: var(--brand);
+  background: #1a2325;
+}
+
+/* AVATAR SELECTOR */
+#avatarSelector {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  padding: 10px 0;
+}
+
+#avatarSelector label img {
+  width: 70px;
+  height: 70px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  transition: transform 0.2s, border 0.2s;
+}
+
+#avatarSelector label:hover img {
+  transform: scale(1.08);
+  border-color: var(--muted);
+}
+
+#avatarSelector label img.selected {
+  border-color: var(--brand) !important;
+  transform: scale(1.1);
+  box-shadow: 0 0 12px rgba(118, 226, 198, 0.4);
+}
+
+/* BOTONES */
+#CrearCuenta .btn.brand {
+  padding: 12px;
+  font-size: 1rem;
+  border-radius: 14px;
+}
+
+#CrearCuenta .btn.ghost {
+  padding: 10px;
+  border-radius: 14px;
+  opacity: .8;
+  transition: opacity .2s;
+}
+
+#CrearCuenta .btn.ghost:hover {
+  opacity: 1;
+}
+
+#CrearCuenta hr {
+  border-color: rgba(255,255,255,.08);
+}
+
+/* ===========================
+   TIPOGRAFÍA GENERAL
+   =========================== */
+.account-container {
+    font-family: "Poppins", sans-serif;
+    color: #f5f5f5;
+    line-height: 1.5;
+}
+
+/* Títulos estilizados */
+.account-container h1 {
+    font-size: 2rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+    color: #ffffff;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.account-container p {
+    color: #cfcfcf;
+    text-align: center;
+    margin-bottom: 25px;
+    font-size: 0.95rem;
+}
+
+/* Inputs más elegantes */
+.account-container input {
+    width: 100%;
+    padding: 12px 15px;
+    border-radius: 10px;
+    border: 1px solid #444;
+    background: #1d1d1d;
+    color: #fff;
+    font-size: 0.95rem;
+    transition: 0.25s ease;
+}
+
+.account-container input:focus {
+    border-color: #8f44fd;
+    box-shadow: 0 0 5px rgba(143, 68, 253, 0.6);
+    outline: none;
+}
+
+/* ===========================
+   SCROLLBAR PERSONALIZADA
+   =========================== */
+
+/* Para navegadores WebKit (Chrome, Edge, Opera, Safari) */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #1a1a1a;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #5b5b5b;
+    border-radius: 10px;
+    transition: 0.3s;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #8f44fd;
+}
+
+/* Firefox */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: #5b5b5b #1a1a1a;
+}
