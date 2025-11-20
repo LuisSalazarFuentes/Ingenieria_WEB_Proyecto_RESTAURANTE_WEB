@@ -15,15 +15,35 @@
     <div class="brand"><div class="logo">🍔</div>RATATOUILLE: ¡DE TODO UN POCO!</div>
     <div class="row" style="gap:8px">
       <!--
-      <span class="chip">Rol:
+      <span class="chip">OPCIONES:
         <select id="roleSelect">
-          <option value="cliente">Cliente</option>
-          <option value="vendedor">Vendedor</option>
-          <option value="admin">Administrador</option>
+          <option value="Menu">Menu</option>
+          <option value="MisPedidos">Mis Pedidos</option>
+          <option value="MiDireccion">Mi Direccion</option>
         </select>
       </span>
-      -->
-      <button class="btn brand" id="seedBtn">Iniciar Sesion</button>
+      6-->
+      <div id="OptionSesionBar">
+        <button class="btn brand" id="seedBtn">Iniciar Sesion</button>
+      </div>
+
+      <div id="CrearSesionBar">
+        <button class="btn brand" id="RegistrarBtn">Crear Cuenta</button>
+      </div>
+
+      <!-- TARJETA DE PERFIL (ESTÁ OCULTA AL INICIO) -->
+      <div id="ProfileCard" class="row" style="align-items:center; gap:8px; display:none;">
+        <img id="ProfileAvatar" src="imagenes/RATATOUILLE.png"
+             style="width:40px;height:40px;border-radius:50%;border:2px solid white;">
+        <div style="display:flex; flex-direction:column; line-height:1;">
+          <span id="ProfileName" style="font-size:14px;font-weight:bold;">Usuario</span>
+          <span id="ProfileRole" style="font-size:12px;" class="muted">Rol</span>
+        </div>
+      </div>
+
+      <div id="CloseSesionBar">
+        <button class="btn brand" id="CloseBtn">Cerrar Sesion</button>
+      </div>
     </div>
   </div>
 </header>
@@ -31,7 +51,64 @@
 
 
 
+<!--Inicio de sesion-->
+<div class="modal" id="InicioSesion">
+  <div class="modal-content">
+      <h3>Inicio de Sesion</h3>
+      <input id="InitCorreo" placeholder="Escribe tu Correo">
+      <input id="InitContraseña" placeholder="Escribe tu Contraseña">
+      <button class="btn brand" id="InitSesionBtn">Iniciar Sesion</button>
 
+      <hr style="margin: 16px 0; border: 0; border-top: 1px solid var(--muted);">
+      <button class="btn ghost" id="CloseSesionBtn">Cerrar</button>
+
+  </div>
+</div>
+
+
+<!--Crear Cuenta-->
+<div class="modal" id="CrearCuenta">
+  <div class="modal-content">
+      
+    <h3>Crea una Cuenta</h3>
+
+      <h5>Ingresa tu Nombre</h5>
+      <input id="RegNombre" placeholder="Ingresa un Nombre">
+      
+      <h5>Ingresa un Correo valido</h5>
+      <input id="RegCorreo" placeholder="Ingresa un Correo">
+      
+      <h5>Ingresa una Contraseña que cumpla lo siguiente: 8 caracteres, 1 Mayuscula, 1 minuscula, 1 numero</h5>
+      <input id="RegContraseña" placeholder="Ingresa una Contraseña">
+      
+
+      <!-- Selección de Avatar -->
+      <h5>Selecciona un Avatar</h5>
+
+      <div id="avatarSelector">
+        <label>
+          <input type="radio" name="avatar" value="Enchiladas.jpg" hidden>
+          <img src="imagenes_Perfiles/Enchiladas.jpg">
+        </label>
+
+        <label>
+          <input type="radio" name="avatar" value="Hamburguesa.jpg" hidden>
+          <img src="imagenes_Perfiles/Hamburguesa.jpg">
+        </label>
+
+        <label>
+          <input type="radio" name="avatar" value="Tacos.jpg" hidden>
+          <img src="imagenes_Perfiles/Tacos.jpg">
+        </label>
+      </div>
+
+      <button class="btn brand" id="CrearCuentaBtn">Crear Cuenta</button>
+      
+      <hr style="margin: 16px 0; border: 0; border-top: 1px solid var(--muted);">
+      <button class="btn ghost" id="CerrarCrearBtn">Cerrar</button>
+
+  </div>
+</div>
 
 
 
@@ -41,14 +118,18 @@
   <!-- CLIENTE -->
   <section id="cliente-app" hidden>
     <div class="filter-bar" id="filterBar"></div>
+
+    <!--Distribucion principal-->
     <div class="layout">
+      
+      <!--MENU-->
       <div>
         <h2>Menú</h2>
         <div class="grid menu" id="menuGrid"></div>
       </div>
-      
+
+      <!-- SECCION PÁRA CONFIRMAR MI PEDIDO-->
       <aside class="aside card">
-        <!-- SECCION ÁRA CONFIRMAR MI PEDIDO-->
         <div class="p">
           <!-- TITULO -->
           <h3>Carrito</h3>
@@ -71,11 +152,38 @@
     </div>
   </section>
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   <!-- VENDEDOR -->
   <section id="vendedor-app" hidden>
     <h2>Pedidos entrantes</h2>
     <div class="grid" id="ordersGrid"></div>
   </section>
+
+
+
+
+
+
+
+
+
+
+
 
   <!-- ADMIN -->
   <section id="admin-app" hidden>
@@ -136,16 +244,6 @@
 </div>
 
 
-<!--Inicio de sesion-->
-<div class="modal" id="InicioSesion">
-  <div class="modal-content">
-      <h3>Inicio de Sesion</h3>
-      <input id="InitCorreo" placeholder="Escribe tu Correo"></textarea>
-      <input id="InitContraseña" placeholder="Escribe tu Contraseña"></textarea>
-      <button class="btn brand" id="InitSesionBtn">Iniciar</button>
-      <button class="btn ghost" id="CloseSesionBtn">Cerrar</button>
-  </div>
-</div>
 
 
 
