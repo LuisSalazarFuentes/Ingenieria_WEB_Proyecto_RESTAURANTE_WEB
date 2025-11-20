@@ -239,7 +239,7 @@ $('#InitSesionBtn').onclick = async () => {
           if (bwj.imagen && bwj.imagen.trim() !== "") {
             localStorage.setItem('selectedAvatar', bwj.imagen);
           } else {
-            localStorage.setItem('selectedAvatar', "imagenes/RATATOUILLE.png");
+            localStorage.setItem('selectedAvatar', "imagenes_Perfiles/RATATOUILLE.png");
           }
 
           state.role = bwj.rol;
