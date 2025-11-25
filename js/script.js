@@ -347,6 +347,9 @@ $('#CrearCuentaBtn').onclick = async () => {
     mostrarMensaje("❌ Error de conexión con el servidor.");
   }
 };
+
+
+
 //CERRAR CREAR CUENTA
 $('#CerrarCrearBtn').onclick = () => $('#CrearCuenta').style.display = 'none';
 
@@ -440,7 +443,12 @@ function renderMenu() {
     card.className = 'card';
     
     // IMAGEN NEUTRAL PARA PALTILLOS SIN IMAGEN O NO CARGADOS
-    const imgSrc = m.img || 'imagenes/RATATOUILLE.png ';
+    //const imgSrc = m.img || 'imagenes/RATATOUILLE.png ';
+    //const imgSrc = m.img ? `/imagenes/${m.img}`  :'imagenes/RATATOUILLE.png';
+    const imgSrc = (m.img && m.img !== 'null') ? `/imagenes/${m.img}` : '/imagenes/RATATOUILLE.png';
+
+
+
     const avgRating = m.reviews.length ? (m.reviews.reduce((s, r) => s + r.rating, 0) / m.reviews.length) : 0;
 
     // SECCION QUE AGREGA LOS PLATILLOS AL FRONT
@@ -918,71 +926,106 @@ function renderAdminKpis() {
 
 
 
+$('#addDishBtn').onclick = async () => {
 
-// AGREGAR PLATILLO
-$('#addDishBtn').onclick = () => {
-  // NOMBRE
   const name = $('#newName').value.trim();
-  // PRECIO
   const price = parseFloat($('#newPrice').value);
-  // IMAGEN (URL O DIRECCION)
-  const img = $('#newImg').value.trim();
-  // DESCRIPCION
   const desc = $('#newDesc').value.trim();
-  // CATEGORIA
   const cat = $('#newCategory').value;
-  // ALERTA EN CASO DE QUE NO SE COMPLETARON LOS CAMPO
-  if (!name || !(price >= 0)) return alert('Completa todos los campos (nombre y precio). Si no tienes imagen, pega una URL o usa picsum).');
-  const menu = storage.get('menu', []);
-  const id = (menu.at(-1)?.id || 0) + 1;
-  menu.push({ id, name, price, available: true, desc, img: img || `https://picsum.photos/seed/${encodeURIComponent(name)}/600/400`, category: cat, reviews: [] });
-  storage.set('menu', menu);
-  $('#newName').value = ''; 
-  $('#newPrice').value = ''; 
-  $('#newImg').value = ''; 
-  $('#newDesc').value = ''; 
-  $('#newCategory').value = '';
-  renderMenu(); 
-  renderFilters(); 
-  renderAdminMenuList(); 
-  renderAdminKpis();
+  const imgFile = $('#newImg').files[0];
+
+  if (!name || !(price >= 0) || !desc || !cat || !imgFile) {
+    return alert("Faltan campos — revisa nombre, precio, descripcion, categoría e imagen.");
+  }
+
+  const formData = new FormData();
+  formData.append("nombre", name);
+  formData.append("precio", price);
+  formData.append("descripcion", desc);
+  formData.append("categoria", cat);
+  formData.append("id_empleado", 1); // PON EL EMPLEADO REAL
+  formData.append("imagen", imgFile); // ❗ nombre exacto como en multer
+
+  const res = await fetch("/platillos", {
+    method: "POST",
+    body: formData
+  });
+
+  const data = await res.json();
+  console.log("Respuesta backend:", data);
+
+  alert(data.message);
 };
 
+
+// Renderiza lista de platillos con opción a eliminar
 // Renderiza lista de platillos con opción a eliminar
 function renderAdminMenuList() {
   const menu = storage.get('menu', []);
-
   const container = $('#adminMenuListContainer');
-    if (!container) return;
-  container.innerHTML = ''; // limpio
+  if (!container) return;
+  container.innerHTML = '';
+
   const panel = document.createElement('div');
   panel.className = 'card p';
   panel.innerHTML = `
     <h3>Eliminar platillo</h3>` + (menu.length ? menu.map(m => `
-
-    <div class="row" style="margin:4px 0; align-items:center; justify-content:space-between">
-      
-      <span style="flex:1">${m.name} (${fmt(m.price)})</span>
-      
-      <button class="btn ghost" data-del="${m.id}">Eliminar</button>
-    
+      <div class="row" style="margin:4px 0; align-items:center; justify-content:space-between">
+        <span style="flex:1">${m.name} (${fmt(m.price)})</span>
+        <button class="btn ghost" data-del="${m.id}">Eliminar</button>
       </div>`).join('') : '<div class="muted">No hay platillos en el menú.</div>');
+
   container.appendChild(panel);
 
-  // Delegación para eliminar platillo
-  panel.onclick = (e) => {
-    const id = e.target.dataset.del;
-    if (!id) return;
+  // Delegación de eventos para eliminar
+  panel.onclick = async (e) => {
+    const id = parseInt(e.target.dataset.del);
+if (!id) return; // sale si no hay id válido
+
+
+    console.log("ID a eliminar:", id); // 🔍
+
     if (!confirm('¿Eliminar este platillo?')) return;
-    let menu = storage.get('menu', []);
-    menu = menu.filter(m => m.id != id);
-    storage.set('menu', menu);
-    renderMenu(); 
-    renderFilters(); 
-    renderAdminMenuList(); 
-    renderAdminKpis();
+
+    try {
+      const res = await fetch('/platillos/eliminar', {  // Si tu front está en otro puerto: 'http://localhost:3000/api/platillos/eliminar'
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      });
+
+      const data = await res.json();
+      console.log("Respuesta del backend:", data); // 🔍
+
+      if (!data.ok) return alert('Error al eliminar: ' + data.mensaje);
+
+      // Actualizar storage y renderizar
+      let menu = storage.get('menu', []);
+      menu = menu.filter(m => m.id != id);
+      storage.set('menu', menu);
+
+      renderMenu();
+      renderFilters();
+      renderAdminMenuList();
+      renderAdminKpis();
+
+      alert('Platillo eliminado correctamente');
+    } catch (err) {
+      console.error(err);
+      alert('Error al eliminar platillo');
+    }
   };
 }
+
+
+
+
+
+
+
+
+
+
 
 // ----------------- CARGA DESDE MYSQL -----------------
 // Trae los platillos desde el backend
@@ -1189,4 +1232,3 @@ function typeAnimation() {
   }
 }
 typeAnimation();
-
