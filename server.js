@@ -537,6 +537,56 @@ app.use(express.static(path.join(__dirname)));
 
 
 
+//EDITAR PLATILLO
+app.post("/platillos/editar", upload.single("imagen"), (req, res) => {
+  const { id, nombre, precio, descripcion, categoria } = req.body;
+  const nuevaImagen = req.file ? req.file.filename : null;
+
+  if (!id || !nombre || !precio || !descripcion || !categoria) {
+    return res.json({ 
+      ok: false, 
+      mensaje: "Faltan datos para actualizar." 
+    });
+  }
+
+  let sql = `
+    UPDATE PLATILLOS 
+    SET Nombre = ?, PRECIO = ?, DESCRIPCION = ?, CATEGORIA = ?
+  `;
+  let params = [nombre, precio, descripcion, categoria];
+
+  if (nuevaImagen) {
+    sql += `, IMAGEN = ? `;
+    params.push(nuevaImagen);
+  }
+
+  sql += ` WHERE ID_PLATILLO = ?`;
+  params.push(id);
+
+  db.query(sql, params, (err) => {
+    if (err) {
+      console.error("❌ Error al actualizar:", err);
+      return res.json({ 
+        ok: false, 
+        mensaje: "Error al actualizar platillo." 
+      });
+    }
+
+    res.json({ 
+      ok: true, 
+      mensaje: "Platillo actualizado correctamente" 
+    });
+  });
+});
+
+
+
+
+
+
+
+
+
 
 // OBTENER PLATILLOS
 app.get('/platillos', (req, res) => {
