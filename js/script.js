@@ -102,6 +102,13 @@ function setRole(r) {
 
 
 
+
+
+
+
+
+
+
 // ---------- BOTON DE INICIO SESION, CREAR, Cerrar ---------- 
 // RENDERIZAR LOS BOTONES DE SESIÓN
 function renderOptionSesion() {
@@ -144,11 +151,21 @@ function renderOptionSesion() {
 
 
 
+
+
+
+
 //CERRAR VENTANAS
 function CerrarModales() {
   $('#InicioSesion').style.display = 'none';
   $('#CrearCuenta').style.display = 'none';
 }
+
+
+
+
+
+
 
 
 
@@ -288,6 +305,11 @@ $('#CloseSesionBtn').onclick = () => $('#InicioSesion').style.display = 'none';
 
 
 
+
+
+
+
+
 //ABRIR CREAR CUENTA
 function OpenCrearCuenta(){
   $('#RegCorreo').value = '';
@@ -347,11 +369,13 @@ $('#CrearCuentaBtn').onclick = async () => {
     mostrarMensaje("❌ Error de conexión con el servidor.");
   }
 };
-
-
-
 //CERRAR CREAR CUENTA
 $('#CerrarCrearBtn').onclick = () => $('#CrearCuenta').style.display = 'none';
+
+
+
+
+
 
 
 
@@ -418,6 +442,8 @@ $('#CloseBtn').onclick = async () => {
 
 
 
+
+
 // ----------------- MENÚ -----------------
 // Renderiza los platillos en la UI
 //RENDER MENU
@@ -443,9 +469,9 @@ function renderMenu() {
     card.className = 'card';
     
     // IMAGEN NEUTRAL PARA PALTILLOS SIN IMAGEN O NO CARGADOS
-    //const imgSrc = m.img || 'imagenes/RATATOUILLE.png ';
-    //const imgSrc = m.img ? `/imagenes/${m.img}`  :'imagenes/RATATOUILLE.png';
     const imgSrc = (m.img && m.img !== 'null') ? `/imagenes/${m.img}` : '/imagenes/RATATOUILLE.png';
+
+
 
 
 
@@ -479,6 +505,10 @@ function renderMenu() {
       </div>`;
     wrap.appendChild(card);
   });
+
+
+
+
 
 
 
@@ -537,6 +567,7 @@ function renderMenu() {
 
 
 
+
 // ----------------- CARRITO -----------------
 // Renderiza el carrito del cliente
 function renderCart() {
@@ -563,8 +594,14 @@ function renderCart() {
   // GENERA EL TOTAL DEL PEDIDO
   const total = state.cart.reduce((s, i) => s + i.qty * i.price, 0);
   $('#cartTotal').textContent = fmt(total);
-  
 }
+
+
+
+
+
+
+
 
 
 
@@ -615,13 +652,6 @@ function checkout() {
     alert('Pedido guardado localmente (offline).');
   })();
 }
-
-
-
-
-
-
-
 
 
 
@@ -713,32 +743,84 @@ function renderClientOrders() {
 
 
 
+
+
 // ----------------- RESEÑAS -----------------
 // Modal para ver y agregar reseñas
-function openReviewModal()
-{
+async function openReviewModal() {
   const menu = storage.get('menu', []);
   const prod = menu.find(m => m.id == state.currentReview);
   if (!prod) return alert('Producto no encontrado');
+
   $('#modalTitle').textContent = `Reseñas de ${prod.name}`;
-  $('#reviewList').innerHTML = prod.reviews.length ? prod.reviews.map(r => `<div class="review-item"><strong>${r.user}:</strong> ${'⭐'.repeat(r.rating)} ${r.text}</div>`).join('') : '<div class="muted">Sin reseñas aún.</div>';
+  $('#reviewList').innerHTML = '<div class="muted">Cargando reseñas...</div>';
+
+  try {
+    const res = await fetch(`/resenas/${prod.id}`);
+    const data = await res.json();
+
+    if (!data.ok) {
+      $('#reviewList').innerHTML = '<div class="muted">Error al cargar reseñas</div>';
+      return;
+    }
+
+    if (data.reseñas.length === 0) {
+      $('#reviewList').innerHTML = '<div class="muted">Sin reseñas aún.</div>';
+    } else {
+      $('#reviewList').innerHTML = data.reseñas.map(r => `
+        <div class="review-item">
+            <strong>${r.usuario}:</strong> 
+            ${'⭐'.repeat(r.CALIFICACION)}<br>
+            ${r.COMENTARIOS}
+        </div>
+      `).join('');
+    }
+
+  } catch (e) {
+    console.error(e);
+    $('#reviewList').innerHTML = '<div class="muted">Error al cargar reseñas</div>';
+  }
+
   $('#reviewInput').value = '';
   $('#reviewRating').value = '5';
   $('#reviewModal').style.display = 'grid';
 }
 //Boton para enviar reseña
-$('#sendReviewBtn').onclick = () => 
-{
+$('#sendReviewBtn').onclick = async () => {
   const menu = storage.get('menu', []);
   const prod = menu.find(m => m.id == state.currentReview);
   if (!prod) return alert('Producto no encontrado');
-  const text = $('#reviewInput').value.trim();
-  const rating = parseInt($('#reviewRating').value || '5');
-  if (!text) return alert('Escribe un comentario');
-  prod.reviews.push({ user: 'Cliente', rating, text });
-  storage.set('menu', menu);
-  openReviewModal();//reabre modal actualizado
-  renderMenu();//actualiza UI
+
+  const COMENTARIOS = $('#reviewInput').value.trim();
+  const CALIFICACION = parseInt($('#reviewRating').value || '5');
+
+  if(!COMENTARIOS) return alert('Escribe un comentario');
+
+  console.log("ID_PLATILLO enviado:", prod.id);
+  console.log("CALIFICACION enviada:", CALIFICACION);
+  console.log("COMENTARIOS enviados:", COMENTARIOS);
+
+  try {
+    const res = await fetch('/resenas', {
+      method: 'POST',
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ID_PLATILLO: prod.id,
+        CALIFICACION: CALIFICACION,
+        COMENTARIOS: COMENTARIOS
+      })
+    });
+
+    const data = await res.json();
+    alert(data.mensaje);
+
+    openReviewModal();
+    renderMenu();
+
+  } catch (e) {
+    alert("Error al enviar reseña al servidor");
+    console.error(e);
+  }
 };
 $('#closeReviewBtn').onclick = () => $('#reviewModal').style.display = 'none';
 
@@ -753,33 +835,6 @@ $('#closeReviewBtn').onclick = () => $('#reviewModal').style.display = 'none';
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-// ---------- FILTROS ---------- 
-function renderFilters() {
-  const wrap = $('#filterBar');
-  if (!wrap) return;
-  wrap.innerHTML = '';
-  const menu = storage.get('menu', []);
-  const cats = [...new Set(menu.map(m => m.category).filter(Boolean))];
-  cats.forEach(c => {
-    const btn = document.createElement('button');
-    btn.textContent = c;
-    btn.className = 'filter-btn';
-    if (state.filter === c) btn.classList.add('active');
-    btn.onclick = () => { state.filter = state.filter === c ? '' : c; renderFilters(); renderMenu(); };
-    wrap.appendChild(btn);
-  });
-}
 
 
 
@@ -840,9 +895,6 @@ function renderOrdersSeller() {
 
 
 
-
-
-
   // BOTON PARA AVANZAE
   // Avanzar estado de pedido (prep -> ready -> done)
   wrap.onclick = (e) => {
@@ -863,6 +915,12 @@ function renderOrdersSeller() {
     renderAdminKpis();
   };
 }
+
+
+
+
+
+
 
 
 
@@ -914,18 +972,7 @@ function renderAdminKpis() {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
+// AGREGAR PLATILLO
 $('#addDishBtn').onclick = async () => {
 
   const name = $('#newName').value.trim();
@@ -943,7 +990,6 @@ $('#addDishBtn').onclick = async () => {
   formData.append("precio", price);
   formData.append("descripcion", desc);
   formData.append("categoria", cat);
-  formData.append("id_empleado", 1); // PON EL EMPLEADO REAL
   formData.append("imagen", imgFile); // ❗ nombre exacto como en multer
 
   const res = await fetch("/platillos", {
@@ -958,29 +1004,39 @@ $('#addDishBtn').onclick = async () => {
 };
 
 
-// Renderiza lista de platillos con opción a eliminar
+
+
+
+
+
+
+
+
 // Renderiza lista de platillos con opción a eliminar
 function renderAdminMenuList() {
   const menu = storage.get('menu', []);
+
   const container = $('#adminMenuListContainer');
   if (!container) return;
-  container.innerHTML = '';
-
+  container.innerHTML = ''; // limpio
   const panel = document.createElement('div');
   panel.className = 'card p';
   panel.innerHTML = `
     <h3>Eliminar platillo</h3>` + (menu.length ? menu.map(m => `
-      <div class="row" style="margin:4px 0; align-items:center; justify-content:space-between">
-        <span style="flex:1">${m.name} (${fmt(m.price)})</span>
-        <button class="btn ghost" data-del="${m.id}">Eliminar</button>
-      </div>`).join('') : '<div class="muted">No hay platillos en el menú.</div>');
 
+    <div class="row" style="margin:4px 0; align-items:center; justify-content:space-between">
+      
+      <span style="flex:1">${m.name} (${fmt(m.price)})</span>
+      
+      <button class="btn ghost" data-del="${m.id}">Eliminar</button>
+    
+      </div>`).join('') : '<div class="muted">No hay platillos en el menú.</div>');
   container.appendChild(panel);
 
   // Delegación de eventos para eliminar
   panel.onclick = async (e) => {
     const id = parseInt(e.target.dataset.del);
-if (!id) return; // sale si no hay id válido
+    if (!id) return; // sale si no hay id válido
 
 
     console.log("ID a eliminar:", id); // 🔍
@@ -1016,6 +1072,25 @@ if (!id) return; // sale si no hay id válido
     }
   };
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1063,9 +1138,26 @@ async function cargarPlatillos() {
 
 
 
-
-
-
+// ---------- FILTROS ---------- 
+function renderFilters() {
+  const wrap = $('#filterBar');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  const menu = storage.get('menu', []);
+  const cats = [...new Set(menu.map(m => m.category).filter(Boolean))];
+  cats.forEach(c => {
+    const btn = document.createElement('button');
+    btn.textContent = c;
+    btn.className = 'filter-btn';
+    if (state.filter === c) btn.classList.add('active');
+    btn.onclick = () => { 
+      state.filter = state.filter === c ? '' : c;
+      renderFilters(); 
+      renderMenu(); 
+    };
+    wrap.appendChild(btn);
+  });
+}
 
 
 
@@ -1086,6 +1178,13 @@ function renderAll() {
   renderAdminMenuList();
   renderClientOrders();
 }
+
+
+
+
+
+
+
 
 
 
@@ -1121,6 +1220,11 @@ window.onload = async () => {
 $('#seedBtn').addEventListener('click', OpenInitSesion);
 $('#RegistrarBtn').addEventListener('click',OpenCrearCuenta);
 $('#checkoutBtn').addEventListener('click', checkout);
+
+
+
+
+
 
 
 
@@ -1181,6 +1285,14 @@ function initAvatarSelector() {
 }
 
 
+
+
+
+
+
+
+
+
 // =========================================
 //  MOSTRAR AVATAR Y DATOS EN EL HEADER
 // =========================================
@@ -1201,11 +1313,13 @@ function refreshProfileHeaderFromStorage() {
     document.getElementById("ProfileCard") && (document.getElementById("ProfileCard").style.display = "none");
   }
 }
-/*
-// Llamar cada vez que cambiemos localStorage importante
-window.addEventListener('storage', refreshProfileHeaderFromStorage);
-setInterval(refreshProfileHeaderFromStorage, 1000); // ligero watchdog (si login ocurre desde otra pestaña)
-*/
+
+
+
+
+
+
+
 
 
 
