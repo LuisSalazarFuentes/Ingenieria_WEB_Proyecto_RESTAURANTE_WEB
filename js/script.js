@@ -1027,51 +1027,128 @@ function renderAdminMenuList() {
     <div class="row" style="margin:4px 0; align-items:center; justify-content:space-between">
       
       <span style="flex:1">${m.name} (${fmt(m.price)})</span>
-      
+
+      <button class="btn brand" data-edit="${m.id}">Editar</button>
+
       <button class="btn ghost" data-del="${m.id}">Eliminar</button>
     
       </div>`).join('') : '<div class="muted">No hay platillos en el menú.</div>');
   container.appendChild(panel);
+  
+  // abrir modal para editar
+  panel.onclick = (e) => {
+    const editId = e.target.dataset.edit;
+    if (editId) {
+      openEditDishModal(editId);
+    }
+  };
 
   // Delegación de eventos para eliminar
   panel.onclick = async (e) => {
-    const id = parseInt(e.target.dataset.del);
-    if (!id) return; // sale si no hay id válido
 
+    // 👉 BOTÓN ELIMINAR
+    const delId = e.target.dataset.del;
+    if (delId) {
+      if (!confirm('¿Eliminar este platillo?')) return;
 
-    console.log("ID a eliminar:", id); // 🔍
+      try {
+        const res = await fetch('/platillos/eliminar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: delId })
+        });
 
-    if (!confirm('¿Eliminar este platillo?')) return;
+        const data = await res.json();
+        if (!data.ok) return alert('Error: ' + data.mensaje);
 
-    try {
-      const res = await fetch('/platillos/eliminar', {  // Si tu front está en otro puerto: 'http://localhost:3000/api/platillos/eliminar'
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id })
-      });
+        // actualizar local
+        let menu = storage.get('menu', []);
+        menu = menu.filter(m => m.id != delId);
+        storage.set('menu', menu);
 
-      const data = await res.json();
-      console.log("Respuesta del backend:", data); // 🔍
+        renderAdminMenuList();
+        renderMenu();
+        renderFilters();
 
-      if (!data.ok) return alert('Error al eliminar: ' + data.mensaje);
+        alert('Platillo eliminado.');
+      } catch (error) {
+        console.error(error);
+      }
 
-      // Actualizar storage y renderizar
-      let menu = storage.get('menu', []);
-      menu = menu.filter(m => m.id != id);
-      storage.set('menu', menu);
+      return; // ← evitar que siga revisando
+    }
 
-      renderMenu();
-      renderFilters();
-      renderAdminMenuList();
-      renderAdminKpis();
-
-      alert('Platillo eliminado correctamente');
-    } catch (err) {
-      console.error(err);
-      alert('Error al eliminar platillo');
+    // 👉 BOTÓN EDITAR
+    const editId = e.target.dataset.edit;
+    if (editId) {
+      console.log("EDITAR PLATILLO:", editId);
+      openEditDishModal(editId);
+      return;
     }
   };
 }
+
+
+
+
+
+
+
+
+
+
+let currentEditId = null;
+
+function openEditDishModal(id) {
+  currentEditId = id;
+  const menu = storage.get('menu', []);
+  const dish = menu.find(m => m.id == id);
+  if (!dish) return alert("Platillo no encontrado");
+
+  $('#editName').value = dish.name;
+  $('#editPrice').value = dish.price;
+  $('#editDesc').value = dish.desc;
+  $('#editCategory').value = dish.category;
+
+  $('#editDishModal').style.display = 'grid';
+}
+
+
+
+
+
+
+
+
+
+
+$('#saveEditBtn').onclick = async () => {
+  const formData = new FormData();
+  formData.append("id", currentEditId);
+  formData.append("nombre", $('#editName').value.trim());
+  formData.append("precio", $('#editPrice').value.trim());
+  formData.append("descripcion", $('#editDesc').value.trim());
+  formData.append("categoria", $('#editCategory').value.trim());
+
+  const imgFile = $('#editImg').files[0];
+  if (imgFile) formData.append("imagen", imgFile);
+
+  const res = await fetch("/platillos/editar", {
+    method: "POST",
+    body: formData
+  });
+
+  const data = await res.json();
+  alert(data.mensaje);
+
+  if (data.ok) {
+    await cargarPlatillos();
+    renderAll();
+    $('#editDishModal').style.display = 'none';
+  }
+};
+$('#cancelEditBtn').onclick = () => {$('#editDishModal').style.display = 'none';};
+
 
 
 
@@ -1342,7 +1419,7 @@ function typeAnimation() {
       animatedText.innerHTML = "";
       i = 0;
       typeAnimation();
-    }, 3000);
+    }, 3000)
   }
 }
 typeAnimation();
