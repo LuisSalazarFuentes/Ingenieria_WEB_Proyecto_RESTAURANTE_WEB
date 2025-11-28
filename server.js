@@ -96,31 +96,16 @@ app.get('/', (req, res) => {
 
 // 🔥 LIMPIAR TOKEN DE SESIONES AL INICIAR EL SERVIDOR
 function limpiarSesiones() {
-  const query1 = 'UPDATE CLIENTES SET token_sesion = NULL';
-  const query2 = 'UPDATE EMPLEADOS SET token_sesion = NULL';
+  const query1 = 'UPDATE CUENTAS SET token_sesion = NULL';
 
   db.query(query1, err => {
-    if (err) console.error('❌ Error al limpiar sesiones CLIENTES:', err);
-    else console.log('🧹 Tokens limpiados en CLIENTES');
-  });
-
-  db.query(query2, err => {
-    if (err) console.error('❌ Error al limpiar sesiones EMPLEADOS:', err);
-    else console.log('🧹 Tokens limpiados en EMPLEADOS');
+    if (err) console.error('❌ Error al limpiar sesiones CUENTAS:', err);
+    else console.log('🧹 Tokens limpiados en CUENTAS');
   });
 }
 
 // Ejecutar limpieza cada vez que el servidor arranque
 limpiarSesiones();
-
-
-
-
-
-
-
-
-
 
 //Validación de usuario y password
 function validarCredenciales(usuario, password) {
@@ -139,15 +124,6 @@ function validarCredenciales(usuario, password) {
 
   return errores;
 }
-
-
-
-
-
-
-
-
-
 
 app.post('/crearCuenta', (req, res) => {
   const { RegUsuario, RegPassword, RegNombre, RegAvatar } = req.body;
@@ -170,10 +146,10 @@ app.post('/crearCuenta', (req, res) => {
   }
 
   // 👍 Si todo está bien, revisar si el usuario ya existe
-  const queryExiste = "SELECT * FROM CLIENTES WHERE EMAIL = ?";
+  const queryExiste = "SELECT * FROM CUENTAS WHERE EMAIL = ?";
   db.query(queryExiste, [RegUsuario], (err, results) => {
     if (err) {
-      console.error("❌ Error al consultar CLIENTES:", err);
+      console.error("❌ Error al consultar CUENTAS:", err);
       return res.json({
         ok: false,
         mensaje: "Error interno del servidor."
@@ -188,7 +164,7 @@ app.post('/crearCuenta', (req, res) => {
     }
 
     // Insertar en BD
-    const queryInsert = "INSERT INTO CLIENTES (NOMBRE, EMAIL, PASSWORD,IMAGEN) VALUES (?, ?, ?, ?)";
+    const queryInsert = "INSERT INTO CUENTAS (NOMBRE, EMAIL, PASSWORD,IMAGEN) VALUES (?, ?, ?, ?)";
     db.query(queryInsert, [RegNombre, RegUsuario, RegPassword, RegAvatar], (err2) => {
       if (err2) {
         console.error("❌ Error al crear cuenta:", err2);
@@ -206,15 +182,6 @@ app.post('/crearCuenta', (req, res) => {
   });
 });
 
-
-
-
-
-
-
-
-
-
 // Login con validación + generación de token
 app.post('/login', (req, res) => {
   const { usuario, password } = req.body;
@@ -226,136 +193,74 @@ app.post('/login', (req, res) => {
     });
   }
 
-  const errores = validarCredenciales(usuario,password)
-
+  // Validar formato de correo y contraseña
+  const errores = validarCredenciales(usuario, password);
   if (errores.length > 0) {
-    return res.json({ 
-      ok: false, 
-      mensaje: errores.join('\n') 
+    return res.json({
+      ok: false,
+      mensaje: errores.join('\n')
     });
   }
 
-  // Validación en MySQL
-  // Buscar primero en la tabla de EMPLEADOS
-  const queryEmpleado = 'SELECT * FROM EMPLEADOS WHERE EMAIL = ?';
+  // ÚNICA TABLA: USUARIOS
+  const queryUser = 'SELECT * FROM CUENTAS WHERE EMAIL = ?';
 
-  db.query(queryEmpleado, [usuario], (err, empResults) => {
+  db.query(queryUser, [usuario], (err, results) => {
     if (err) {
-      console.error('❌ Error al consultar EMPLEADOS:', err);
+      console.error('❌ Error al consultar CUENTAS:', err);
       return res.json({
         ok: false,
         mensaje: 'Error interno del servidor.'
       });
     }
 
-    // Si NO está en EMPLEADOS, buscar en la tabla CLIENTES
-    if (empResults.length === 0) {
+    // Si no existe el usuario
+    if (results.length === 0) {
+      return res.json({
+        ok: false,
+        mensaje: '❌ Usuario no encontrado.'
+      });
+    }
 
-      const queryCliente = 'SELECT * FROM CLIENTES WHERE EMAIL = ?';
-      
-      db.query(queryCliente, [usuario], (err2, cliResults) => {
-        if (err2) {
-          console.error('❌ Error al consultar CLIENTES:', err2);
-          return res.json({
-            ok: false,
-            mensaje: 'Error interno del servidor.'
-          });
-        }
+    const user = results[0];
 
-        // Si tampoco está en CLIENTES
-        if (cliResults.length === 0) {
-          return res.json({
-            ok: false,
-            mensaje: '❌ Usuario no encontrado.'
-          });
-        }
-        
-        const cliente = cliResults[0];
-
-    //validar contraseña
-    if (cliente.PASSWORD !== password) {
+    // Validar contraseña
+    if (user.PASSWORD !== password) {
       return res.json({ 
         ok: false, 
         mensaje: '❌ Contraseña incorrecta.' 
       });
     }
-    
-      // Generar token y guardar en BD
-      const token = uuidv4();
-      db.query('UPDATE CLIENTES SET token_sesion = ? WHERE EMAIL = ?', [token, usuario], err3 => {
-        
-        if (err3) {
-          console.error('❌ Error al guardar token:', err3);
-          return res.json({ 
-            ok: false, 
-            mensaje: 'Error al guardar sesión.' 
-          });
-        }
-        
 
-        // Enviar cookie de sesión
-        res.cookie('token_sesion', token, {
-          httpOnly: true,
-          maxAge: 1000 * 60 * 10 // 10 minutos
-        });
+    // Generar token único
+    const token = uuidv4();
 
-        //Enviar respuesta JSON con rol de cliente
-        return res.json({ 
-          ok: true,
-          mensaje: `✅ Bienvenido, 
-          ${cliente.NOMBRE || usuario}!`,
-          rol: 'Cliente' 
-        });
-      });
-    });
-    
-    return;
-  }  
-  //Está en EMPLEADOS
-  const empleado = empResults[0];
-  if (empleado.PASSWORD !== password) {
-    return res.json({ 
-      ok: false, 
-      mensaje: '❌ Contraseña incorrecta.' 
-    });
-  }
-  const token = uuidv4();
-
-    db.query('UPDATE EMPLEADOS SET token_sesion = ? WHERE EMAIL = ?', [token, usuario], err4 => {
-      
-      if (err4) {
-        console.error('❌ Error al guardar token EMPLEADO:', err4);
+    // Guardar token en la tabla USUARIOS
+    const sqlUpdate = 'UPDATE CUENTAS SET token_sesion = ? WHERE EMAIL = ?';
+    db.query(sqlUpdate, [token, usuario], (err2) => {
+      if (err2) {
+        console.error('❌ Error al guardar token CUENTA:', err2);
         return res.json({ 
           ok: false, 
           mensaje: 'Error al guardar sesión.' 
         });
       }
-      
 
-      // Guardar cookie
+      // Guardar cookie en el navegador
       res.cookie('token_sesion', token, {
         httpOnly: true,
-        maxAge: 1000 * 60 * 10
+        maxAge: 1000 * 60 * 10  // 10 minutos
       });
 
-      // ✅ Enviar el rol real del empleado
+      // Enviar mensaje con Rol real desde la BD
       return res.json({
         ok: true,
-        mensaje: `✅ Bienvenido Empleado, ${empleado.NOMBRE || usuario}!`,
-        rol: empleado.ROL || 'Empleado'
+        mensaje: `✅ Bienvenido, ${user.NOMBRE}!`,
+        rol: user.ROL  // ← Cliente, Vendedor, Administrador
       });
-    });    
+    });
   });
 });
-
-
-
-
-
-
-
-
-
 
 //ENTRAR EN LA BASE DE DATOS Y BUSCAR EL USUARIO
 // Ruta protegida (requiere sesión)
@@ -369,7 +274,7 @@ app.get('/bienvenido', (req, res) => {
     });
   }
   
-  const query = 'SELECT NOMBRE, ROL, IMAGEN FROM EMPLEADOS WHERE token_sesion = ? UNION SELECT NOMBRE, "Cliente" as ROL, IMAGEN FROM CLIENTES WHERE token_sesion = ?';
+  const query = 'SELECT NOMBRE, ROL, IMAGEN FROM CUENTAS WHERE token_sesion = ?';
   
   db.query(query, [token, token], (err, results) => {
     if (err || results.length === 0) {
@@ -388,30 +293,15 @@ app.get('/bienvenido', (req, res) => {
   });
 });
 
-
-
-
-
-
-
-
-
-
 // Cerrar sesión
 app.get('/logout', async (req, res) => {
   const token = req.cookies.token_sesion;
 
   if (token) {
     try {
-      // Borrar token en CLIENTES
+      // Borrar token en CUENTAS
       await db.promise().query(
-        'UPDATE CLIENTES SET token_sesion = NULL WHERE token_sesion = ?',
-        [token]
-      );
-
-      // Borrar token en EMPLEADOS
-      await db.promise().query(
-        'UPDATE EMPLEADOS SET token_sesion = NULL WHERE token_sesion = ?',
+        'UPDATE CUENTAS SET token_sesion = NULL WHERE token_sesion = ?',
         [token]
       );
 
@@ -467,7 +357,7 @@ app.get('/logout', async (req, res) => {
 
 //-----------------------seccion platillo-----------------------
 
-//AGREGAR PLATILLOS BD AGREGUE ESTO 
+//AGREGAR PLATILLOS BD 
 app.post("/platillos", upload.single("imagen"), (req, res) => {
 
   console.log(">>> LLEGO A /api/platillos");
@@ -492,15 +382,6 @@ app.post("/platillos", upload.single("imagen"), (req, res) => {
     res.json({ ok: true, message: "Platillo agregado correctamente" });
   });
 });
-
-
-
-
-
-
-
-
-
 
 //ELIMINAR LOS PLATILLOS DE LA BD 
 app.post('/platillos/eliminar', (req, res) => {
@@ -528,14 +409,6 @@ app.post('/platillos/eliminar', (req, res) => {
 
 // LINEA HASTA EL FINAL 
 app.use(express.static(path.join(__dirname)));
-
-
-
-
-
-
-
-
 
 //EDITAR PLATILLO
 app.post("/platillos/editar", upload.single("imagen"), (req, res) => {
@@ -578,15 +451,6 @@ app.post("/platillos/editar", upload.single("imagen"), (req, res) => {
     });
   });
 });
-
-
-
-
-
-
-
-
-
 
 // OBTENER PLATILLOS
 app.get('/platillos', (req, res) => {
@@ -631,7 +495,7 @@ app.get('/platillos', (req, res) => {
 
 
 //---------------------SECCION RESEÑAS-------------------------
-//AGREGAR RESEÑA BD, USANDO TOKEN SE SESION
+// AGREGA RESEÑAS USANDO EL TOKEN DE SESION
 app.post("/resenas", (req, res) => {
   const token = req.cookies.token_sesion;
   const { ID_PLATILLO, CALIFICACION, COMENTARIOS } = req.body;
@@ -644,70 +508,75 @@ app.post("/resenas", (req, res) => {
   }
 
   const calificacionNum = Number(CALIFICACION);
-  if (!calificacionNum || calificacionNum < 1 || calificacionNum > 5) {
+  if (calificacionNum < 1 || calificacionNum > 5) {
     return res.json({ 
       ok: false, 
       mensaje: "Calificación inválida" 
     });
   }
 
-  function insertarResena(userId) {
-    const sql = `
-        INSERT INTO RESEÑAS 
-        (ID_PLATILLO, ID_USUARIO, CALIFICACION, COMENTARIOS)
-        VALUES (?, ?, ?, ?)
-    `;
-
-    db.query(sql, [ID_PLATILLO, userId, calificacionNum, COMENTARIOS], (err) => {
-        if (err) {
-            console.log("ERR SQL:", err);
-            return res.json({ ok: false, mensaje: "Error al guardar reseña (SQL)" });
-        }
-        res.json({ ok: true, mensaje: "Reseña agregada correctamente" });
+  // ❌ Invitados NO pueden reseñar
+  if (!token) {
+    return res.json({
+      ok: false,
+      mensaje: "Solo usuarios registrados pueden agregar reseñas"
     });
   }
-  if (!token) {
-    return insertarResena(null);  // ← INVITADO USA NULL
-  }
 
-  const userQuery = "SELECT ID_USUARIO FROM CLIENTES WHERE token_sesion = ?";
+  // 🔥 BUSCAR ID_CUENTA usando el token
+  const userQuery = "SELECT ID_CUENTA FROM CUENTAS WHERE token_sesion = ?";
+
   db.query(userQuery, [token], (err, data) => {
-    if (err || data.length === 0) return insertarResena(0);
-    insertarResena(data[0].ID_USUARIO);
+    if (err || data.length === 0) {
+      return res.json({
+        ok: false,
+        mensaje: "Sesión inválida, vuelve a iniciar sesión"
+      });
+    }
+
+    const userId = data[0].ID_CUENTA;
+
+    // 🔥 Insertar reseña con el ID correcto
+    const sql = `
+      INSERT INTO RESEÑAS 
+      (ID_PLATILLO, ID_CUENTA, CALIFICACION, COMENTARIOS)
+      VALUES (?, ?, ?, ?)
+    `;
+
+    db.query(sql, [ID_PLATILLO, userId, calificacionNum, COMENTARIOS], (err2) => {
+      if (err2) {
+        console.log("ERR SQL:", err2);
+        return res.json({ ok: false, mensaje: "Error al guardar reseña (SQL)" });
+      }
+      res.json({ ok: true, mensaje: "Reseña agregada correctamente" });
+    });
   });
 });
 
 
-
-
-
-
-
-
-
-
+// ---------------- OBTENER RESEÑAS ----------------
 app.get("/resenas/:idPlatillo", (req, res) => {
   const id = req.params.idPlatillo;
 
   const sql = `
-  SELECT r.CALIFICACION, r.COMENTARIOS, r.FECHA, IFNULL(c.NOMBRE, 'Anonimo') AS usuario 
-  FROM RESEÑAS r 
-  LEFT JOIN CLIENTES c ON r.ID_USUARIO = c.ID_USUARIO 
-  WHERE r.ID_PLATILLO = ? 
-  ORDER BY r.FECHA DESC
+    SELECT 
+      r.CALIFICACION,
+      r.COMENTARIOS,
+      r.FECHA,
+      COALESCE(c.NOMBRE, 'Anónimo') AS usuario
+    FROM RESEÑAS r
+    LEFT JOIN CUENTAS c ON r.ID_CUENTA = c.ID_CUENTA
+    WHERE r.ID_PLATILLO = ?
+    ORDER BY r.FECHA DESC
   `;
 
   db.query(sql, [id], (err, data) => {
-    if (err) return res.json({ 
-      ok: false, 
-      mensaje: "Error al obtener reseñas" 
-    });
-    res.json({ 
-      ok: true, 
-      reseñas: data 
-    });
+    if (err) return res.json({ ok: false, mensaje: "Error al obtener reseñas" });
+
+    res.json({ ok: true, reseñas: data });
   });
 });
+
 
 
 
@@ -757,7 +626,7 @@ app.post('/pedido', (req, res) => {
   }
 
   // Obtener cliente
-  db.query('SELECT ID_CLIENTE FROM CLIENTES WHERE token_sesion = ?', [token], (err, cliResults) => {
+  db.query('SELECT ID_CUENTA FROM CUENTAS WHERE token_sesion = ?', [token], (err, cliResults) => {
     
     if (err || cliResults.length === 0) {
       return res.json({ 
@@ -765,10 +634,10 @@ app.post('/pedido', (req, res) => {
         mensaje: 'Usuario no encontrado' 
       });
     }
-    const clienteId = cliResults[0].ID_CLIENTE;
+    const clienteId = cliResults[0].ID_CUENTA;
 
     // Crear pedido
-    db.query('INSERT INTO PEDIDOS (ID_CLIENTE, STATUS, TOTAL) VALUES (?, "prep", ?)', [clienteId, items.reduce((s,i)=>s+i.qty*i.price,0)], (err2, result) => {
+    db.query('INSERT INTO PEDIDOS (ID_CUENTA, STATUS, TOTAL) VALUES (?, "prep", ?)', [clienteId, items.reduce((s,i)=>s+i.qty*i.price,0)], (err2, result) => {
       
       if (err2) {
         return res.json({ 
@@ -816,7 +685,7 @@ app.get('/pedidos', (req, res) => {
     });
   }
 
-  db.query('SELECT ID_CLIENTE FROM CLIENTES WHERE token_sesion = ?', [token], (err, cliResults) => {
+  db.query('SELECT ID_CUENTA FROM CUENTAS WHERE token_sesion = ?', [token], (err, cliResults) => {
     
     if (err || cliResults.length === 0) {
       return res.json({ 
@@ -824,7 +693,7 @@ app.get('/pedidos', (req, res) => {
         mensaje: 'Usuario no encontrado' 
       });
     }
-    const clienteId = cliResults[0].ID_CLIENTE;
+    const clienteId = cliResults[0].ID_CUENTA;
 
     const query = `
       
@@ -836,7 +705,7 @@ app.get('/pedidos', (req, res) => {
       
       JOIN PLATILLOS pl ON dp.ID_PLATILLO = pl.ID_PLATILLO
       
-      WHERE p.ID_CLIENTE = ?
+      WHERE p.ID_CUENTA = ?
       
       ORDER BY p.ID_PEDIDO DESC
     `;
