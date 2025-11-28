@@ -498,7 +498,11 @@ function renderMenu() {
           
           <div class="price">${fmt(m.price)}</div>
           
-          <button class="btn" ${!m.available ? 'disabled' : ''} data-add="${m.id}">Añadir</button>
+          ${(state.role === "Cliente")
+            ? `<button class="btn" ${!m.available ? 'disabled' : ''} data-add="${m.id}">Añadir</button>`
+            : ""
+          }
+
           
           <button class="btn acc" data-review="${m.id}">Reseñas</button>
         </div>
@@ -595,15 +599,6 @@ function renderCart() {
   const total = state.cart.reduce((s, i) => s + i.qty * i.price, 0);
   $('#cartTotal').textContent = fmt(total);
 }
-
-
-
-
-
-
-
-
-
 
 //realiza el checkout y guarda el pedido
 function checkout() {
@@ -748,6 +743,7 @@ function renderClientOrders() {
 // ----------------- RESEÑAS -----------------
 // Modal para ver y agregar reseñas
 async function openReviewModal() {
+
   const menu = storage.get('menu', []);
   const prod = menu.find(m => m.id == state.currentReview);
   if (!prod) return alert('Producto no encontrado');
@@ -781,12 +777,28 @@ async function openReviewModal() {
     $('#reviewList').innerHTML = '<div class="muted">Error al cargar reseñas</div>';
   }
 
+
+  // Bloquear reseñas para invitados
+  if (state.role === 'Invitado') {
+    $('#reviewInput').style.display = "none";
+    $('#reviewRating').style.display = "none";
+    $('#sendReviewBtn').style.display = "none";
+  } else {
+    $('#reviewInput').style.display = "block";
+    $('#reviewRating').style.display = "block";
+    $('#sendReviewBtn').style.display = "block";
+  }
+
   $('#reviewInput').value = '';
   $('#reviewRating').value = '5';
   $('#reviewModal').style.display = 'grid';
 }
 //Boton para enviar reseña
 $('#sendReviewBtn').onclick = async () => {
+  if (state.role === 'Invitado') {
+    return alert("❌ Debes iniciar sesión para dejar una reseña.");
+  }
+
   const menu = storage.get('menu', []);
   const prod = menu.find(m => m.id == state.currentReview);
   if (!prod) return alert('Producto no encontrado');
@@ -1001,6 +1013,20 @@ $('#addDishBtn').onclick = async () => {
   console.log("Respuesta backend:", data);
 
   alert(data.message);
+
+// 🔥 volver a cargar platillos DESDE MYSQL
+await cargarPlatillos();
+
+// 🔥 volver a renderizar el menú, filtros y admin
+renderAll();
+
+// limpiar formulario
+$('#newName').value = "";
+$('#newPrice').value = "";
+$('#newDesc').value = "";
+$('#newCategory').value = "";
+$('#newImg').value = "";
+
 };
 
 
@@ -1046,7 +1072,7 @@ function renderAdminMenuList() {
   // Delegación de eventos para eliminar
   panel.onclick = async (e) => {
 
-    // 👉 BOTÓN ELIMINAR
+    // BOTÓN ELIMINAR
     const delId = e.target.dataset.del;
     if (delId) {
       if (!confirm('¿Eliminar este platillo?')) return;
@@ -1078,7 +1104,7 @@ function renderAdminMenuList() {
       return; // ← evitar que siga revisando
     }
 
-    // 👉 BOTÓN EDITAR
+    // BOTÓN EDITAR
     const editId = e.target.dataset.edit;
     if (editId) {
       console.log("EDITAR PLATILLO:", editId);
