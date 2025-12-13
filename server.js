@@ -7,7 +7,6 @@ const { v4: uuidv4 } = require('uuid');
 const multer = require("multer");
 const app = express();
 
-
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
