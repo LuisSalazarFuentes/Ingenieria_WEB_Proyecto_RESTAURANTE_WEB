@@ -15,11 +15,12 @@ function mostrarMensaje(texto) {
   alert(texto);
 }
 
-
-
-
-
-
+// Parche: forzar credentials: "include" en TODOS los fetch
+const originalFetch = window.fetch;
+window.fetch = function(url, options = {}) {
+  options.credentials = "include";
+  return originalFetch(url, options);
+};
 
 
 
@@ -217,6 +218,7 @@ function validarPassword(password) {
 function OpenInitSesion(){
   $('#InitCorreo').value = '';
   $('#InitContraseña').value = '';
+
   $('#InicioSesion').style.display = 'grid';
 }
 //INICIO DE SESION
@@ -224,6 +226,9 @@ function OpenInitSesion(){
 $('#InitSesionBtn').onclick = async () => {
   const usuario = $('#InitCorreo').value.trim();
   const password = $('#InitContraseña').value.trim();
+
+  
+
 
   if (!usuario || !password) {
     mostrarMensaje("⚠️ Por favor, completa todos los campos.");
@@ -298,6 +303,9 @@ $('#InitSesionBtn').onclick = async () => {
     mostrarMensaje('⚠️ Error al conectar con el servidor.');
   }
 };
+
+
+
 //CERRA LOGIN
 $('#CloseSesionBtn').onclick = () => $('#InicioSesion').style.display = 'none';
 
@@ -389,6 +397,10 @@ $('#CloseBtn').onclick = async () => {
     console.warn('Error al llamar /logout', err);
   }
 
+  state.cart = [];
+  storage.set('cart', []); // si usas localStorage para el carrito
+
+
   // Borrar rol a Invitado
   state.role = 'Invitado';
   storage.set("role", "Invitado");
@@ -439,19 +451,33 @@ $('#CloseBtn').onclick = async () => {
 
 
 
-
-
-
-
-
 // ----------------- MENÚ -----------------
 // Renderiza los platillos en la UI
-//RENDER MENU
 function renderMenu() {
   const wrap = $('#menuGrid');
   wrap.innerHTML = '';
 
   let menu = storage.get('menu', []);
+
+  // FILTRAR SOLO PLATILLOS ACTIVOS DESCOMENTAR PARA VER LOS PLATILLOS
+   menu = menu.filter(m => m.activo);  // <-- aquí
+
+// Normalizar valores para evitar undefined
+   menu = menu.map(m => ({
+   ...m,
+   promedio: m.promedio ?? 0,
+   totalReseñas: m.totalReseñas ?? 0
+}));
+
+
+
+  // Normalizar valores para evitar undefined
+    menu = menu.map(m => ({
+   ...m,
+  promedio: m.promedio ?? 0,
+  totalReseñas: m.totalReseñas ?? 0
+  }));
+
   
   
   if (!menu || !menu.length) { 
@@ -475,11 +501,15 @@ function renderMenu() {
 
 
 
-    const avgRating = m.reviews.length ? (m.reviews.reduce((s, r) => s + r.rating, 0) / m.reviews.length) : 0;
+    // DESCOMENTAR const avgRating = m.reviews.length ? (m.reviews.reduce((s, r) => s + r.rating, 0) / m.reviews.length) : 0;
+    
+    const reviews = Array.isArray(m.reviews) ? m.reviews : [];
+    const avgRating = reviews.length ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length) : 0;
 
     // SECCION QUE AGREGA LOS PLATILLOS AL FRONT
     // SE DEBE AGREGAR LAS DIRECCIONES A LA BASE DE DATOS PARA EXTRAER LA INFORMACION DE CADA UNO
     //HTML de cada platillo
+  
     card.innerHTML = `
       <img src="${imgSrc}" alt="${m.name}" onerror="this.onerror=null;this.src='imagenes/RATATOUILLE.png'">
       <div class="p">
@@ -492,7 +522,8 @@ function renderMenu() {
         
         <div>${m.category ? '<span class="category">' + m.category + '</span>' : ''}</div>
         
-        <div>⭐ ${avgRating.toFixed(1)} (${m.reviews.length})</div>
+        <div>⭐ ${m.promedio} (${m.totalReseñas})</div>
+
         
         <div class="row" style="justify-content:space-between;margin-top:8px">
           
@@ -568,36 +599,66 @@ function renderMenu() {
 
 
 
-
-
-
-
 // ----------------- CARRITO -----------------
-// Renderiza el carrito del cliente
 function renderCart() {
+
   const list = $('#cartList');
-  // ESTTUS DEL CARRITO EN CASO DE ESTAR VACIO
-  if (!state.cart.length) 
-  { 
+  const btn = $('#checkoutBtn'); // 🔥 TU BOTÓN
+
+  if (!state.cart.length) { 
     list.textContent = 'Tu carrito está vacío'; 
-    $('#cartTotal').textContent = fmt(0); 
+    $('#cartTotal').textContent = fmt(0);
+
+    // 🔥 OCULTAR BOTÓN
+    if (btn) btn.style.display = "none";
+
     return; 
   }
-  // ESTATUS DEL CARRITO AGREGANDO DATO
+
+  // 🔥 MOSTRAR EL BOTÓN SI HAY PRODUCTOS
+  if (btn) btn.style.display = "block";
+
   list.innerHTML = '';
+
   state.cart.forEach(ci => {
     const row = document.createElement('div');
     row.className = 'row';
-    // SEPARACION ENTRE PEDIDOS DEL CARRITO
     row.style.margin = '6px 0';
-    // AGRAG NOMBRE DEL PRODUCTO + CANTIDAD + PREIO FINAL (CANTIDAD * PRECIO)
-    row.innerHTML = `<span>${ci.name} × ${ci.qty}</span><strong>${fmt(ci.qty * ci.price)}</strong>`;
-    // PERMITE QUE APARESCAN EN EL CARRITO
+    row.style.display = 'flex';
+    row.style.justifyContent = 'space-between';
+    row.style.alignItems = 'center';
+
+    row.innerHTML = `
+      <span>${ci.name}</span>
+      <div>
+        <button onclick="changeQty(${ci.id}, -1)" style="padding:2px 6px">-</button>
+        <span id="qty-${ci.id}" style="margin:0 6px">${ci.qty}</span>
+        <button onclick="changeQty(${ci.id}, 1)" style="padding:2px 6px">+</button>
+      </div>
+      <strong>${fmt(ci.qty * ci.price)}</strong>
+    `;
+
     list.appendChild(row);
   });
-  // GENERA EL TOTAL DEL PEDIDO
+
   const total = state.cart.reduce((s, i) => s + i.qty * i.price, 0);
   $('#cartTotal').textContent = fmt(total);
+}
+
+
+
+
+// Función para cambiar la cantidad de un ítem
+function changeQty(itemId, delta) {
+  const item = state.cart.find(i => i.id === itemId);
+  if (!item) return;
+
+  item.qty += delta;
+  if (item.qty <= 0) {
+    state.cart = state.cart.filter(i => i.id !== itemId);
+  }
+
+  renderCart();
 }
 
 //realiza el checkout y guarda el pedido
@@ -609,11 +670,12 @@ function checkout() {
   const items = state.cart.map(i => ({ id: i.id, qty: i.qty, price: i.price }));
   (async () => {
     try {
-      const res = await fetch('/pedido', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items })
-      });
+      const res = await fetch('/pedidosbd', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ items })
+});
+
       const j = await res.json();
       if (j.ok) {
         // limpiar carrito local y actualizar UI
@@ -651,6 +713,15 @@ function checkout() {
 
 
 
+// PEDIDOS POR CLIENTE EN BD 
+// CONFIRMAR PEDIDO
+
+
+
+// ===============================
+
+
+
 
 
 
@@ -677,42 +748,184 @@ function checkout() {
 
 
 // ----------------- PEDIDOS CLIENTE -----------------
-// Renderiza los pedidos realizados por el cliente
-function renderClientOrders() {
-  const orders = storage.get('orders', []);
+async function renderClientOrders() {
+  try {
+    const res = await fetch("/obtenerpedidos1", {
+      credentials: "include"
+    });
 
-  // Insertar pedidos dentro del aside (bajo Confirmar pedido)
-  const aside = document.querySelector('.aside .p');
-  if (!aside) return;
+    if (res.status === 401) {
+      console.warn("⚠ No hay sesión, no se mostrarán pedidos.");
+      limpiarPedidos();
+      return;
+    }
 
-  // Eliminar si ya existe
-  const existing = document.getElementById('clientOrders');
-  if (existing) existing.remove();
+    const orders = await res.json();
+    console.log("Datos crudos:", orders);
 
-  const cont = document.createElement('div');
-  cont.id = 'clientOrders';
-  cont.style.marginTop = '12px';  
+    // === AGRUPAR POR ID_PEDIDO ===
+    const pedidos = {};
+    orders.forEach(o => {
+      if (!pedidos[o.ID_PEDIDO]) {
+        pedidos[o.ID_PEDIDO] = {
+          id: o.ID_PEDIDO,
+          estado: o.ESTADO,
+          total: o.TOTAL,
+          items: []
+        };
+      }
+      pedidos[o.ID_PEDIDO].items.push({
+        nombre: o.NOMBRE_PLATILLO,
+        cantidad: o.CANTIDAD,
+        precio: Number(o.PRECIO_UNITARIO)
+      });
+    });
 
-  // AGREGA SECION DE MIS PEDIDOS Y LOS PEDIDOS ORDENADOS
-  cont.innerHTML = `
-    <h3>Mis pedidos</h3>${orders.length? orders.map((o) => `
-    
-    <div class="card p" style="margin:8px 0">
-      
-      <strong>Pedido #${o.id}</strong> 
-      
-      <span class="status ${o.status}">${estadoTexto(o.status)}</span>
-      
-      <ul>${o.items.map(i => `<li>${i.name} × ${i.qty}</li>`).join('')}</ul>
-      
-      <div style="margin-top:6px"><strong>Total:</strong> ${fmt(o.total)}</div>
-    
-    </div>`).join('') : '<div class="muted">No has realizado pedidos todavía.</div>'}`;
-  aside.appendChild(cont);
+    const pedidosArray = Object.values(pedidos);
+
+    // Guardar en localStorage para admin
+    storage.set('orders', pedidosArray);
+
+    pedidosArray.forEach((p, i) => (p.numero = i + 1));
+
+    const aside = document.querySelector('.aside .p');
+    if (!aside) return;
+
+    // Borrar sección antes de renderizar
+    const existing = document.getElementById('clientOrders');
+    if (existing) existing.remove();
+
+    // === SEPARAR PEDIDOS ===
+    const activos = pedidosArray.filter(p => p.estado !== "done");
+    const historial = pedidosArray.filter(p => p.estado === "done");
+
+    // === CONTENEDOR ===
+    const cont = document.createElement("div");
+    cont.id = "clientOrders";
+    cont.style.marginTop = "12px";
+
+    cont.innerHTML = `
+      <div class="tabs" style="display:flex; gap:12px; margin-bottom:14px;">
+        <button id="tabActivos" class="tabBtn active">Mis pedidos</button>
+        <button id="tabHistorial" class="tabBtn">Historial</button>
+      </div>
+
+      <div id="vistaActivos">
+        <h3>Mis pedidos</h3>
+        ${
+          activos.length
+            ? activos.map(p => cardPedido(p)).join("")
+            : '<div class="muted">No tienes pedidos en curso.</div>'
+        }
+      </div>
+
+      <div id="vistaHistorial" style="display:none;">
+        <h3>Historial</h3>
+        ${
+          historial.length
+            ? historial.map(p => cardPedido(p)).join("")
+            : '<div class="muted">Aún no tienes pedidos en historial.</div>'
+        }
+      </div>
+    `;
+
+    aside.appendChild(cont);
+
+    // === EVENTOS DE PESTAÑAS ===
+    document.getElementById("tabActivos").onclick = () => {
+      mostrarVista("activos");
+    };
+    document.getElementById("tabHistorial").onclick = () => {
+      mostrarVista("historial");
+    };
+
+  } catch (err) {
+    console.error("Error mostrando pedidos:", err);
+  }
+}
+
+// === FUNCIONES DE UI ===
+function mostrarVista(tipo) {
+  const activos = document.getElementById("vistaActivos");
+  const historial = document.getElementById("vistaHistorial");
+
+  const tA = document.getElementById("tabActivos");
+  const tH = document.getElementById("tabHistorial");
+
+  if (tipo === "activos") {
+    activos.style.display = "block";
+    historial.style.display = "none";
+    tA.classList.add("active");
+    tH.classList.remove("active");
+  } else {
+    activos.style.display = "none";
+    historial.style.display = "block";
+    tA.classList.remove("active");
+    tH.classList.add("active");
+  }
+}
+
+// === COMPONENTE CARD ===
+function cardPedido(p) {
+  return `
+    <div class="card pe" style="margin:8px 0">
+      <strong>Pedido #${p.numero}</strong>
+      <span class="status ${p.estado}">
+        ${estadoTexto(p.estado)}
+      </span>
+
+      <ul>
+        ${p.items.map(i => `
+          <li>
+            ${i.nombre} × ${i.cantidad} — ${fmt(i.precio * i.cantidad)}
+          </li>
+        `).join("")}
+      </ul>
+
+      <div style="margin-top:6px">
+        <strong>Total:</strong> ${fmt(p.total)}
+      </div>
+    </div>
+  `;
 }
 
 
 
+// 🔥 Función auxiliar para borrar pedidos si no hay sesión
+function limpiarPedidos() {
+  const existing = document.getElementById("clientOrders");
+  if (existing) existing.remove();
+}
+
+
+
+
+
+
+
+
+async function deletePedido(id) {
+  if (!confirm("¿Eliminar este pedido?")) return;
+
+  try {
+    const res = await fetch("/eliminarpedido", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id })
+    });
+
+    const data = await res.json();
+
+    if (data.ok) {
+      alert("Pedido eliminado");
+      renderClientOrders();
+    } else {
+      alert("Error al eliminar");
+    }
+  } catch (err) {
+    console.error("Error eliminando pedido:", err);
+  }
+}
 
 
 
@@ -771,6 +984,15 @@ async function openReviewModal() {
         </div>
       `).join('');
     }
+    // 🔥 Guardar promedio y total en el producto y actualizar menú
+    prod.promedio = data.promedio ?? 0;
+    prod.totalReseñas = data.total ?? 0;
+
+    // Actualizar menú en localStorage
+    storage.set('menu', menu);
+
+    // Refrescar menú en pantalla
+    renderMenu();  
 
   } catch (e) {
     console.error(e);
@@ -826,8 +1048,10 @@ $('#sendReviewBtn').onclick = async () => {
     const data = await res.json();
     alert(data.mensaje);
 
-    openReviewModal();
+   
     renderMenu();
+    openReviewModal();
+    
 
   } catch (e) {
     alert("Error al enviar reseña al servidor");
@@ -865,70 +1089,155 @@ $('#closeReviewBtn').onclick = () => $('#reviewModal').style.display = 'none';
 
 
 
-// ----------------- PEDIDOS VENDEDOR -----------------
-//seccion vendedores
-//solo estados y avanzar
+// ----------------- PEDIDOS VENDEDOR ----------------
+//renderiza pedidos para el vendedor
+
 function estadoTexto(st) {
   return st === 'prep' ? 'En preparación' : st === 'ready' ? 'Listo' : st === 'done' ? 'Entregado' : st;
 }
 
-//renderiza pedidos para el vendedor
-function renderOrdersSeller() {
-  const wrap = $('#ordersGrid');
+
+// Renderizar pedidos del vendedor agrupados y numerados por cliente
+async function renderOrdersSeller() {
+  const wrap = document.getElementById('ordersGrid');
   wrap.innerHTML = '';
-  const orders = storage.get('orders', []);
-  
-  // ESTATUS SI HAY PEDIDOS
-  if (!orders.length) { wrap.innerHTML = '<div class="muted">No hay pedidos.</div>'; return; }
-  orders.forEach(o => {
-    // CREA UN ELEMENTO PARA EL PEDIDO
-    const card = document.createElement('div');
-    card.className = 'card p';
-    // AGREGA NUMERO DE PEDIDO, ESTADO DEL PEDIDO
-    card.innerHTML = `
-      <strong>Pedido #${o.id}</strong> 
 
-      <span class="status ${o.status}">${estadoTexto(o.status)}</span>
-      
-      <ul>${o.items.map(i => `<li>${i.name} × ${i.qty}</li>`).join('')}</ul>
-      
-      <div class="row" style="gap:8px">
-        <button class="btn" data-advance="${o.id}">Avanzar</button>
-      </div>`;
-    wrap.appendChild(card);
-  });
+  try {
+    const res = await fetch('/vendedor/getPedidos');
+    const data = await res.json();
+
+    if (!data.ok) {
+      wrap.innerHTML = '<div class="muted">Error cargando pedidos.</div>';
+      return;
+    }
+
+    const orders = data.pedidos;
+
+    if (!orders.length) {
+      wrap.innerHTML = '<div class="muted">No hay ordenes.</div>';
+      return;
+    }
+
+    // ----------------------------------------------------------------
+    // AGRUPAR POR CLIENTE
+    // ----------------------------------------------------------------
+    const grupos = {}; // { ID_CUENTA: { clienteNombre, pedidos:[] } }
+
+    orders.forEach(o => {
+      if (!grupos[o.ID_CUENTA]) {
+        grupos[o.ID_CUENTA] = {
+          cliente: o.NOMBRE_CLIENTE,
+          pedidos: []
+        };
+      }
+      grupos[o.ID_CUENTA].pedidos.push(o);
+    });
+
+    // ----------------------------------------------------------------
+    // RENDERIZAR AGRUPADO Y NUMERADO
+    // ----------------------------------------------------------------
+    Object.values(grupos).forEach(grupo => {
+      // Título de cliente
+      const title = document.createElement('h3');
+      title.textContent = `Ordenes de : ${grupo.cliente}`;
+      wrap.appendChild(title);
+
+      // Contador de pedidos por cliente
+      let counter = 1;
+
+      grupo.pedidos.forEach(o => {
+        const card = document.createElement('div');
+        card.className = 'card p';
+
+        let lista = '';
+        o.platillos.forEach(p => {
+          lista += `<li>${p.NOMBRE_PLATILLO} × ${p.CANTIDAD}</li>`;
+        });
+
+        card.innerHTML = `
+  <div class="pedido-header">
+    <div>
+      <strong class="pedido-num">Orden ${counter}</strong>
+      <span class="pedido-id">#ID BD${o.ID_PEDIDO}</span>
+    </div>
+    <span class="status ${o.ESTADO}">${estadoTexto(o.ESTADO)}</span>
+  </div>
+
+  <ul class="pedido-lista">
+    ${lista}
+  </ul>
+
+  <div class="semaforo" data-id="${o.ID_PEDIDO}" data-estado="${o.ESTADO}">
+
+  <div class="semaforo-item">
+    <div class="light prep ${o.ESTADO === 'prep' ? 'on' : ''}"></div>
+    <span>En preparación</span>
+  </div>
+
+  <div class="semaforo-item">
+    <div class="light ready ${o.ESTADO === 'ready' ? 'on' : ''}"></div>
+    <span>Listo</span>
+  </div>
+
+  <div class="semaforo-item">
+    <div class="light done ${o.ESTADO === 'done' ? 'on' : ''}"></div>
+    <span>Entregado</span>
+  </div>
+
+</div>
 
 
+`;
 
 
+        wrap.appendChild(card);
+        counter++;
+      });
 
+      wrap.appendChild(document.createElement('hr'));
+    });
 
+  } catch (err) {
+    console.error('Error cargando pedidos:', err);
+    wrap.innerHTML = '<div class="muted">Error cargando pedidos.</div>';
+  }
 
+  // Manejar avance de estado
+  wrap.onclick = async (e) => {
+  const light = e.target.closest('.light');
+  if (!light) return;
 
+  const sem = light.closest('.semaforo');
+  const id = sem.dataset.id;
 
+  // Estado según el color clickeado
+  let nuevoEstado = 'prep';
+  if (light.classList.contains('ready')) nuevoEstado = 'ready';
+  if (light.classList.contains('done')) nuevoEstado = 'done';
 
-  // BOTON PARA AVANZAE
-  // Avanzar estado de pedido (prep -> ready -> done)
-  wrap.onclick = (e) => {
-    const idAdv = e.target.dataset.advance;
-    if (!idAdv) return;
-    const orders = storage.get('orders', []);
-    const o = orders.find(x => x.id == idAdv);
-    if (!o) return;
-    
-    // ciclo: prep -> ready -> done (si ya es done, permanece)
-    if (o.status === 'prep') o.status = 'ready';
-    else if (o.status === 'ready') o.status = 'done';
-    else o.status = 'done';
-    
-    storage.set('orders', orders);
+  try {
+    const res = await fetch('/vendedor/actualizarestado', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, estado: nuevoEstado })
+    });
+
+    const data = await res.json();
+
+    if (!data.ok) {
+      alert('Error al actualizar estado');
+      return;
+    }
+
+    // Recargar pedidos con nuevo estado
     renderOrdersSeller();
-    renderClientOrders();
-    renderAdminKpis();
-  };
+
+  } catch (err) {
+    console.error('Error actualizando estado:', err);
+  }
+};
+
 }
-
-
 
 
 
@@ -960,19 +1269,32 @@ function renderOrdersSeller() {
 // ----------------- ADMIN -----------------
 //seccion Administrador
 //agregar y eliminar platillos
-function renderAdminKpis() {
-  const orders = storage.get('orders', []);
-  const menu = storage.get('menu', []);
-  const ventas = orders.filter(o => o.status === 'done').reduce((s, o) => s + o.total, 0);
-  const ticket = orders.length ? orders.reduce((s, o) => s + o.total, 0) / orders.length : 0;
-  // VENTAS
-  $('#kpiVentas').textContent = fmt(ventas);
-  // PEDIDOS
-  $('#kpiPedidos').textContent = orders.length;
-  // TICKET PROMEDIO
-  $('#kpiTicket').textContent = fmt(ticket);
-  // ARTICULOS EN MENU
-  $('#kpiMenu').textContent = menu.length;
+async function renderAdminKpis() {
+  try {
+    const res = await fetch('/obtenerpedidos_admin');
+    const orders = await res.json();
+
+    const menu = storage.get('menu', []);
+
+    // TOTAL DE VENTAS (solo pedidos completados)
+    const ventas = orders
+      .filter(o => o.ESTADO === 'done')
+      .reduce((s, o) => s + Number(o.TOTAL), 0);
+
+    // TICKET PROMEDIO
+    const ticket = orders.length
+      ? ventas / orders.length
+      : 0;
+
+    // PINTAR KPI EN EL FRONT
+    $('#kpiVentas').textContent = fmt(ventas);
+    $('#kpiPedidos').textContent = orders.length;
+    $('#kpiTicket').textContent = fmt(ticket);
+    $('#kpiMenu').textContent = menu.length;
+    
+  } catch (err) {
+    console.error("Error obteniendo KPIs admin:", err);
+  }
 }
 
 
@@ -1030,6 +1352,27 @@ $('#newImg').value = "";
 };
 
 
+async function handleTogglePlatillo(e) {
+  const btn = e.target.closest('[data-toggle-platillo]');
+  if (!btn) return;
+
+  const id = btn.getAttribute('data-toggle-platillo');
+
+  const res = await fetch('/platillos/toggle', {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id })
+  });
+
+  const data = await res.json();
+  if (!data.ok) {
+    alert("Error actualizando estado del platillo");
+    return;
+  }
+
+  await cargarPlatillos(); // recargar lista
+  renderAll(); // refrescar menú/admin
+}
 
 
 
@@ -1048,46 +1391,45 @@ function renderAdminMenuList() {
   const panel = document.createElement('div');
   panel.className = 'card p';
   panel.innerHTML = `
-    <h3>Eliminar platillo</h3>` + (menu.length ? menu.map(m => `
+    <h3>Administrar platillos</h3>` + (menu.length ? menu.map(m => {
+      const estadoTexto = m.activo ? "Activo" : "Inactivo";      // ← CORREGIDO
+      const btnEstado = m.activo ? "Deshabilitar" : "Habilitar"; // ← CORREGIDO
+      const estadoColor = m.activo ? "green" : "red";            // ← CORREGIDO
 
-    <div class="row" style="margin:4px 0; align-items:center; justify-content:space-between">
-      
-      <span style="flex:1">${m.name} (${fmt(m.price)})</span>
+      return `
+      <div class="row" style="margin:4px 0; align-items:center; justify-content:space-between">
+        <span style="flex:1">${m.name} (${fmt(m.price)})</span>
 
-      <button class="btn brand" data-edit="${m.id}">Editar</button>
+        <p style="color:${estadoColor}; font-weight:bold; margin:0 8px;">
+          ${estadoTexto}
+        </p>
 
-      <button class="btn ghost" data-del="${m.id}">Eliminar</button>
-    
-      </div>`).join('') : '<div class="muted">No hay platillos en el menú.</div>');
+        <button class="btn brand" data-edit="${m.id}">Editar</button>
+
+        <!-- <button class="btn ghost" data-del="${m.id}">Eliminar</button> -->
+
+        <button class="btn toggle" data-toggle-id="${m.id}">${btnEstado}</button>
+      </div>`;
+    }).join('') : '<div class="muted">No hay platillos en el menú.</div>');
+
   container.appendChild(panel);
-  
-  // abrir modal para editar
-  panel.onclick = (e) => {
-    const editId = e.target.dataset.edit;
-    if (editId) {
-      openEditDishModal(editId);
-    }
-  };
 
-  // Delegación de eventos para eliminar
+  // Delegación de eventos
   panel.onclick = async (e) => {
 
     // BOTÓN ELIMINAR
     const delId = e.target.dataset.del;
     if (delId) {
       if (!confirm('¿Eliminar este platillo?')) return;
-
       try {
         const res = await fetch('/platillos/eliminar', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id: delId })
         });
-
         const data = await res.json();
         if (!data.ok) return alert('Error: ' + data.mensaje);
 
-        // actualizar local
         let menu = storage.get('menu', []);
         menu = menu.filter(m => m.id != delId);
         storage.set('menu', menu);
@@ -1100,15 +1442,35 @@ function renderAdminMenuList() {
       } catch (error) {
         console.error(error);
       }
-
-      return; // ← evitar que siga revisando
+      return;
     }
 
     // BOTÓN EDITAR
     const editId = e.target.dataset.edit;
     if (editId) {
-      console.log("EDITAR PLATILLO:", editId);
       openEditDishModal(editId);
+      return;
+    }
+
+    // BOTÓN TOGGLE
+    const toggleId = e.target.dataset.toggleId;
+    if (toggleId) {
+      try {
+        const res = await fetch('/platillos/toggle', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: toggleId })
+        });
+        const data = await res.json();
+        if (!data.ok) return alert('Error: ' + data.mensaje);
+
+        // recargar menú y admin
+        await cargarPlatillos();      // asegura que storage tenga el valor actualizado
+        renderAdminMenuList();        // renderiza el panel admin con el nuevo estado
+        renderAll();                  // renderiza menú y filtros visibles para front
+      } catch (err) {
+        console.error(err);
+      }
       return;
     }
   };
@@ -1221,7 +1583,8 @@ async function cargarPlatillos() {
         desc: p.DESCRIPCION,
         img: p.IMAGEN,
         category: p.CATEGORIA,
-        reviews: []
+        reviews: [],
+        activo: p.ACTIVO === 1 // <-- ✅ agregar ACTIVO aquí
       }));
       storage.set('menu', menu);
     } else {
@@ -1231,7 +1594,6 @@ async function cargarPlatillos() {
     console.error('Error al cargar platillos:', err);
   }
 }
-
 
 
 
@@ -1263,6 +1625,119 @@ function renderFilters() {
 }
 
 
+async function handleDelete(e) {
+  if (!e.target.classList.contains('btn-eliminar')) return;
+
+  const id = e.target.dataset.id;
+  if (!confirm("¿Eliminar este usuario?")) return;
+
+  try {
+    const res = await fetch('/admin/eliminarUsuario', {
+      method: 'POST',
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id })
+    });
+
+    const data = await res.json();
+    if (!data.ok) return alert("Error eliminando usuario");
+
+    await cargarUsuariosAdmin(); // Refrescar lista
+    alert("Usuario eliminado");
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+async function handleToggle(e) {
+  const btn = e.target.closest('[data-toggle-id]');
+  if (!btn) return;
+
+  const id = btn.getAttribute('data-toggle-id');
+
+  const res = await fetch('/admin/toggleUsuario', {
+    method: 'POST',
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ id })
+  });
+
+  const data = await res.json();
+
+  if (!data.ok) {
+    alert("Error: " + data.mensaje);
+    return;
+  }
+
+  // Recargar la lista para ver cambios
+  cargarUsuariosAdmin();
+}
+
+
+async function cargarUsuariosAdmin() {
+
+  try {
+    const res = await fetch('/admin/getUsuarios');
+    const data = await res.json();
+
+    if (!data.ok) {
+      console.error("No se pudieron cargar los usuarios");
+      return;
+    }
+
+    const grid = document.getElementById('usuariosGrid');
+    grid.innerHTML = "";
+
+    data.usuarios.forEach(u => {
+      const avatar = "/imagenes_Perfiles/Tacos.jpg";
+
+      const estadoTexto = u.ACTIVO ? "Activo" : "Inactivo";
+      const estadoColor = u.ACTIVO ? "green" : "red";
+      const btnEstado = u.ACTIVO ? "Deshabilitar" : "Habilitar";
+
+      grid.innerHTML += `
+        <div class="usuario-card">
+            <img class="avatar" src="${avatar}">
+            
+            <div class="usuario-info">
+                <h4>${u.NOMBRE}</h4>
+                <p>${u.EMAIL}</p>
+                <p><strong>${u.ROL || "Cliente"}</strong></p>
+
+                <!-- Estado visual -->
+                <p style="color:${estadoColor}; font-weight:bold;">
+                  ${estadoTexto}
+                </p>
+            </div>
+
+            <!-- Botón activar/desactivar -->
+            <button class="btn-toggle"
+                    data-toggle-id="${u.ID}">
+              ${btnEstado}
+            </button>
+
+            <!-- Botón eliminar 
+            <button class="btn-eliminar" data-id="${u.ID}">
+              Eliminar
+            </button> -->
+        </div>
+      `;
+    });
+
+    // Limpia listeners duplicados
+    grid.removeEventListener('click', handleDelete); 
+    grid.removeEventListener('click', handleToggle);  
+
+    // Listener eliminar
+    grid.addEventListener('click', handleDelete);
+
+    // Listener activar/desactivar
+    grid.addEventListener('click', handleToggle);
+
+  } catch (err) {
+    console.error("Error cargando usuarios:", err);
+  }
+}
+
+
 
 
 
@@ -1279,6 +1754,7 @@ function renderAll() {
   renderOrdersSeller();
   renderAdminKpis();
   renderAdminMenuList();
+  cargarUsuariosAdmin(); // COMENTAR
   renderClientOrders();
 }
 
@@ -1416,15 +1892,6 @@ function refreshProfileHeaderFromStorage() {
     document.getElementById("ProfileCard") && (document.getElementById("ProfileCard").style.display = "none");
   }
 }
-
-
-
-
-
-
-
-
-
 
 
 // ----------------- ANIMACIÓN TEXTO -----------------
