@@ -627,3 +627,304 @@ main { padding: 24px 0; }
     scrollbar-width: thin;
     scrollbar-color: #5b5b5b #1a1a1a;
 }
+
+
+
+.usuarios-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.usuario-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  background: rgba(26, 34, 36, 0.85);  /* fondo semi-transparente */
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  border-left: 4px solid #76e2c6;      /* borde verde-azulado */
+  margin-bottom: 10px;
+  color: #fff;                          /* letras blancas */
+  transition: transform 0.2s ease, box-shadow 0.2s ease; /* transiciones suaves */
+}
+.usuario-card:hover {
+  transform: translateY(-2px); /* efecto “subida” */
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2); /* sombra más grande */
+}
+
+
+.usuario-card img {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 8px;
+}
+
+.admin-two-columns {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+  margin-top: 20px;
+}
+
+.admin-two-columns .col {
+  flex: 1;
+}
+
+.usuario-card img.avatar {
+  width: 55px;
+  height: 55px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid white;
+}
+
+.usuario-info h4 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.usuario-info p {
+  margin: 2px 0;
+  font-size: 13px;
+  color: white;
+}
+
+
+
+
+
+/*PEDIDOS */
+.card.add-dish {
+  padding: 16px;                        /* un poco más espaciosa */
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  margin-bottom: 12px;
+  width: 100%;                           /* ocupar todo el ancho del contenedor */
+  background: rgba(26, 34, 36, 0.85);   /* fondo semi-transparente */
+  border-left: 4px solid #76e2c6;
+  color: #fff;
+}
+
+.card.p {
+  padding: 12px 16px;               /* un poco más compacto */
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  margin-bottom: 12px;              /* espacio entre cards */
+  max-width: 600px;                  /* ancho máximo */
+  width: 100%;                        /* se ajusta al contenedor */
+  background: rgba(26, 34, 36, 0.85); /* fondo semi-transparente */
+  border-left: 4px solid #76e2c6;
+  color: #fff;                        /* letras blancas */
+}
+
+.card.pe {
+  padding: 12px 16px;               /* un poco más compacto */
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  margin-bottom: 12px;              /* espacio entre cards */
+  max-width: 600px;                  /* ancho máximo */
+  width: 100%;                        /* se ajusta al contenedor */
+  background: rgba(26, 34, 36, 0.85); /* fondo semi-transparente */
+  border-left: 4px solid #ffd166;
+  color: #fff;                        /* letras blancas */
+}
+
+/* Cabecera del pedido */
+.pedido-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.pedido-num {
+  font-size: 1rem;
+  font-weight: bold;
+}
+
+.pedido-id {
+  font-size: 0.8rem;
+  color: #ccc;                        /* un gris claro para el ID */
+  margin-left: 6px;
+}
+
+/* Lista de platillos */
+.pedido-lista {
+  margin: 6px 0 10px 15px;
+  color: #fff;                        /* letras blancas */
+}
+
+.pedido-lista li {
+  margin-bottom: 4px;
+}
+
+/* Botón de avanzar */
+.pedido-btn {
+  width: auto;                        /* no ocupa todo el ancho */
+  background: #76e2c6;
+  color: #1a2224;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* ESTADOS como badges */
+
+.semaforo {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+
+.semaforo-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.light {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  opacity: 0.25;
+  transition: 0.2s;
+  border: 2px solid #333;
+}
+
+.light.prep { background: #e74c3c; }      /* 🔴 Rojo */
+.light.ready { background: #f1c40f; }     /* 🟡 Amarillo */
+.light.done { background: #2ecc71; }      /* 🟢 Verde */
+
+.light.on {
+  opacity: 1;
+  box-shadow: 0 0 10px rgba(0,0,0,0.4);
+}
+
+/*INICIO DE SESION*/
+
+/* Fondo de toda la modal */
+.modall {
+  display: none; /* Oculto por defecto */
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.5); /* Fondo semitransparente */
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+/* Caja principal del modal */
+.modal-contentt {
+  background: #0b0f10;
+  padding: 32px;
+  border-radius: 16px;
+  width: 350px;
+  max-width: 90%;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  font-family: 'Segoe UI', sans-serif;
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Animación suave al aparecer */
+@keyframes fadeIn {
+  from {opacity: 0; transform: translateY(-20px);}
+  to {opacity: 1; transform: translateY(0);}
+}
+
+/* Inputs */
+.modal-contentt input {
+  padding: 12px 16px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 16px;
+  outline: none;
+  transition: all 0.2s ease-in-out;
+}
+
+.modal-contentt input:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 8px rgba(0,123,255,0.3);
+}
+
+/* Botones */
+.modal-contentt .btn {
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.modal-contentt .btn.brand {
+  background-color: #007bff;
+  color: #0b0f10;
+}
+
+.modal-contentt .btn.brand:hover {
+  background-color: #0056b3;
+}
+
+.modal-contentt .btn.ghost {
+  background-color: #ffd166;
+  color: #333;
+}
+
+.modal-contentt .btn.ghost:hover {
+  background-color: black;
+}
+
+/* Título */
+.modal-contentt h3 {
+  margin: 0;
+  font-size: 1.5em;
+  text-align: center;
+  color: white;
+}
+
+/*ICONOSSS */
+.input-icon {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-icon input {
+  flex: 1;
+  padding: 8px 40px 8px 35px; /* espacio para los iconos */
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+
+.input-icon i.fas.fa-envelope,
+.input-icon i.fas.fa-lock {
+  position: absolute;
+  left: 10px;
+  color: #888;
+}
+
+.input-icon .btn-eye {
+  position: absolute;
+  right: 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #888;
+  font-size: 1em;
+}
