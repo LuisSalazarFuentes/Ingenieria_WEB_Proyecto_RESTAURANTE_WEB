@@ -11,8 +11,6 @@ app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
 
-
-
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, "imagenes");
@@ -36,8 +34,8 @@ const upload = multer({ storage });
 const db = mysql.createConnection({
   host: 'localhost',
   user: 'root',
-  password: '123456789',
-  database: 'DeTodoUnPoco'
+  password: 'admin',
+  database: 'detodounpoco'
 });
 
 db.connect(err => {
@@ -102,7 +100,7 @@ function limpiarSesiones() {
     if (err) console.error('❌ Error al limpiar sesiones CUENTAS:', err);
     else console.log('🧹 Tokens limpiados en CUENTAS');
   });
-}
+} 
 
 // Ejecutar limpieza cada vez que el servidor arranque
 limpiarSesiones();
@@ -173,7 +171,7 @@ app.post('/crearCuenta', (req, res) => {
           mensaje: "Error al registrar usuario."
         });
       }
-
+      res.clearCookie('token_sesion');  // ← Limpia la sesión anterior EIMINAR LINEA O COMENTAR
       return res.json({
         ok: true,
         mensaje: `✅ Cuenta creada correctamente. Bienvenido, ${RegNombre}!`
@@ -193,7 +191,7 @@ app.post('/login', (req, res) => {
     });
   }
 
-  // Validar formato de correo y contraseña
+  // Validar formato
   const errores = validarCredenciales(usuario, password);
   if (errores.length > 0) {
     return res.json({
@@ -202,7 +200,7 @@ app.post('/login', (req, res) => {
     });
   }
 
-  // ÚNICA TABLA: USUARIOS
+  // Buscar usuario
   const queryUser = 'SELECT * FROM CUENTAS WHERE EMAIL = ?';
 
   db.query(queryUser, [usuario], (err, results) => {
@@ -214,7 +212,7 @@ app.post('/login', (req, res) => {
       });
     }
 
-    // Si no existe el usuario
+    // Si no existe
     if (results.length === 0) {
       return res.json({
         ok: false,
@@ -224,6 +222,14 @@ app.post('/login', (req, res) => {
 
     const user = results[0];
 
+    // ⭐⭐⭐ NUEVO: Verificar si está activo ⭐⭐⭐
+    if (user.ACTIVO === 0) {
+      return res.json({
+        ok: false,
+        mensaje: '⚠️ Tu cuenta está deshabilitada. Contacta al administrador.'
+      });
+    }
+
     // Validar contraseña
     if (user.PASSWORD !== password) {
       return res.json({ 
@@ -232,10 +238,10 @@ app.post('/login', (req, res) => {
       });
     }
 
-    // Generar token único
+    // Crear token
     const token = uuidv4();
 
-    // Guardar token en la tabla USUARIOS
+    // Guardar token
     const sqlUpdate = 'UPDATE CUENTAS SET token_sesion = ? WHERE EMAIL = ?';
     db.query(sqlUpdate, [token, usuario], (err2) => {
       if (err2) {
@@ -246,21 +252,28 @@ app.post('/login', (req, res) => {
         });
       }
 
-      // Guardar cookie en el navegador
+      // Cookie token
       res.cookie('token_sesion', token, {
         httpOnly: true,
-        maxAge: 1000 * 60 * 10  // 10 minutos
+        maxAge: 1000 * 60 * 10
       });
 
-      // Enviar mensaje con Rol real desde la BD
+      // Cookie id
+      res.cookie('id_cuenta', user.ID_CUENTA, {
+        httpOnly: true,
+        maxAge: 1000 * 60 * 10
+      });
+
+      // Respuesta exitosa
       return res.json({
         ok: true,
         mensaje: `✅ Bienvenido, ${user.NOMBRE}!`,
-        rol: user.ROL  // ← Cliente, Vendedor, Administrador
+        rol: user.ROL
       });
     });
   });
 });
+
 
 //ENTRAR EN LA BASE DE DATOS Y BUSCAR EL USUARIO
 // Ruta protegida (requiere sesión)
@@ -275,8 +288,8 @@ app.get('/bienvenido', (req, res) => {
   }
   
   const query = 'SELECT NOMBRE, ROL, IMAGEN FROM CUENTAS WHERE token_sesion = ?';
-  
-  db.query(query, [token, token], (err, results) => {
+  // ANTES  db.query(query, [token, token], (err, results) =>
+  db.query(query, [token, ], (err, results) => {
     if (err || results.length === 0) {
       return res.json({ 
         ok: false, 
@@ -299,23 +312,34 @@ app.get('/logout', async (req, res) => {
 
   if (token) {
     try {
-      // Borrar token en CUENTAS
+      // Borrar token en la BD
       await db.promise().query(
         'UPDATE CUENTAS SET token_sesion = NULL WHERE token_sesion = ?',
         [token]
       );
 
-      // Quitar cookie del navegador
-      res.clearCookie('token_sesion');
-      
+      // Borrar ambas cookies correctamente (misma configuración que login)
+      res.clearCookie('token_sesion', {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: false,
+        path: "/"
+      });
+
+      res.clearCookie('id_cuenta', {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: false,
+        path: "/"
+      });
+
     } catch (err) {
       console.error("Error al cerrar sesión:", err);
     }
   }
 
-  res.redirect('/');
+  res.json({ ok: true });
 });
-
 
 
 
@@ -360,9 +384,6 @@ app.get('/logout', async (req, res) => {
 //AGREGAR PLATILLOS BD 
 app.post("/platillos", upload.single("imagen"), (req, res) => {
 
-  console.log(">>> LLEGO A /api/platillos");
-  console.log("BODY:", req.body);
-  console.log("FILE:", req.file);
 
   if (!req.file) {
     return res.json({ error: "No se recibió ninguna imagen" });
@@ -454,16 +475,30 @@ app.post("/platillos/editar", upload.single("imagen"), (req, res) => {
 
 // OBTENER PLATILLOS
 app.get('/platillos', (req, res) => {
-  db.query('SELECT * FROM PLATILLOS', (err, results) => {
-    if (err) { 
-      return res.status(500).json({ 
-        ok: false, 
-        mensaje: 'Error en la base de datos' 
+
+  const sql = `
+    SELECT 
+      p.*,
+      COALESCE(AVG(r.CALIFICACION), 0) AS promedio,
+      COUNT(r.ID_RESEÑA) AS totalReseñas
+    FROM PLATILLOS p
+    LEFT JOIN RESEÑAS r ON r.ID_PLATILLO = p.ID_PLATILLO
+    GROUP BY p.ID_PLATILLO
+  `;
+
+  db.query(sql, (err, results) => {
+    if (err) {
+      return res.status(500).json({
+        ok: false,
+        mensaje: "Error en la base de datos"
       });
     }
+
     res.json(results);
   });
+
 });
+
 
 
 
@@ -555,6 +590,7 @@ app.post("/resenas", (req, res) => {
 
 
 // ---------------- OBTENER RESEÑAS ----------------
+// ---------------- OBTENER RESEÑAS ----------------
 app.get("/resenas/:idPlatillo", (req, res) => {
   const id = req.params.idPlatillo;
 
@@ -573,7 +609,21 @@ app.get("/resenas/:idPlatillo", (req, res) => {
   db.query(sql, [id], (err, data) => {
     if (err) return res.json({ ok: false, mensaje: "Error al obtener reseñas" });
 
-    res.json({ ok: true, reseñas: data });
+    // Calcular total de reseñas
+    const total = data.length;
+
+    // Calcular promedio de calificaciones
+    const promedio =
+      total > 0
+        ? data.reduce((sum, r) => sum + r.CALIFICACION, 0) / total
+        : 0;
+
+    res.json({
+      ok: true,
+      reseñas: data,
+      total,
+      promedio: Number(promedio.toFixed(1)) // redondeado
+    });
   });
 });
 
@@ -606,166 +656,331 @@ app.get("/resenas/:idPlatillo", (req, res) => {
 
 
 
+// -- MOSTRAR USUARIOS --
+// Obtener todos los usuarios (solo para administrador)
+app.get('/admin/getUsuarios', (req, res) => {
+   console.log("📥 Se llamó a /admin/getUsuarios");  // <--- AGREGA ESTO
 
-//---------------------SECCION PEDIDOS-------------------------////
-// CREAR PEDIDO
-app.post('/pedido', (req, res) => {
-  const token = req.cookies.token_sesion;
-  if (!token) {
-    return res.json({ 
-      ok: false, 
-      mensaje: 'No hay sesión' 
-    });
-  }
-  const { items } = req.body;
-  if (!items || !items.length) {
-    return res.json({ 
-      ok: false, 
-      mensaje: 'Carrito vacío' 
-    });
-  }
+  // const sql = "SELECT ID_CUENTA AS ID, NOMBRE, EMAIL, IMAGEN, ROL FROM CUENTAS";
+  const sql = "SELECT ID_CUENTA AS ID, NOMBRE, EMAIL, IMAGEN, ROL, ACTIVO FROM CUENTAS";
 
-  // Obtener cliente
-  db.query('SELECT ID_CUENTA FROM CUENTAS WHERE token_sesion = ?', [token], (err, cliResults) => {
-    
-    if (err || cliResults.length === 0) {
-      return res.json({ 
-        ok: false, 
-        mensaje: 'Usuario no encontrado' 
-      });
+
+  db.query(sql, (err, rows) => {
+    if (err) {
+      console.error("❌ Error al obtener usuarios:", err);
+      return res.json({ ok: false });
     }
-    const clienteId = cliResults[0].ID_CUENTA;
 
-    // Crear pedido
-    db.query('INSERT INTO PEDIDOS (ID_CUENTA, STATUS, TOTAL) VALUES (?, "prep", ?)', [clienteId, items.reduce((s,i)=>s+i.qty*i.price,0)], (err2, result) => {
-      
+    return res.json({
+      ok: true,
+      usuarios: rows
+    });
+  });
+});
+
+// -- ELIMINAR USUARIO (solo administrador) ESTA SE VA A IRRR--
+app.post('/admin/eliminarUsuario', (req, res) => {
+  const { id } = req.body;
+
+  if (!id) {
+    return res.json({ ok: false, mensaje: "ID no proporcionado" });
+  }
+
+  const sql = "DELETE FROM CUENTAS WHERE ID_CUENTA = ?";
+
+  db.query(sql, [id], (err, result) => {
+    if (err) {
+      console.error("❌ Error eliminando usuario:", err);
+      return res.json({ ok: false, mensaje: "Error eliminando usuario ((;" });
+    }
+
+    if (result.affectedRows === 0) {
+      return res.json({ ok: false, mensaje: "Usuario no encontrado" });
+    }
+
+    return res.json({ ok: true });
+  });
+});
+
+// -- HABILITAR / DESHABILITAR USUARIO --
+app.post('/admin/toggleUsuario', (req, res) => {
+  const { id } = req.body;
+
+  if (!id) {
+    return res.json({ ok: false, mensaje: "ID no proporcionado" });
+  }
+
+  // Obtener estado actual
+  const getSql = "SELECT ACTIVO FROM CUENTAS WHERE ID_CUENTA = ?";
+
+  db.query(getSql, [id], (err, rows) => {
+    if (err || rows.length === 0) {
+      return res.json({ ok: false, mensaje: "Usuario no encontrado" });
+    }
+
+    const nuevoEstado = rows[0].ACTIVO ? 0 : 1;
+
+    // Cambiar el estado
+    const updateSql = "UPDATE CUENTAS SET ACTIVO = ? WHERE ID_CUENTA = ?";
+
+    db.query(updateSql, [nuevoEstado, id], (err2) => {
       if (err2) {
-        return res.json({ 
-          ok: false, 
-          mensaje: 'Error al guardar pedido' 
+        console.error("❌ Error al cambiar estado del usuario:", err2);
+        return res.json({ ok: false, mensaje: "Error al cambiar estado" });
+      }
+
+      return res.json({
+        ok: true,
+        nuevoEstado
+      });
+    });
+  });
+});
+
+
+
+app.get("/obtenerpedidos1", (req, res) => {
+  const idCuenta = req.cookies.id_cuenta;
+
+  // Si no existe cookie = no hay sesión válida
+  if (!idCuenta) {
+    return res.status(401).json({
+      ok: false,
+      mensaje: "No hay sesión activa o falta id_cuenta."
+    });
+  }
+
+  console.log("🟦 Solicitando pedidos para ID_CUENTA =", idCuenta);
+
+  db.query(
+  `SELECT 
+      p.ID_PEDIDO,
+      p.ID_CUENTA,
+      p.FECHA_COMPRA,
+      p.TOTAL,
+      p.ESTADO,
+      d.CANTIDAD,
+      pl.NOMBRE AS NOMBRE_PLATILLO,
+      pl.PRECIO AS PRECIO_UNITARIO       -- 🔥 AÑADIDO
+   FROM PEDIDOS p
+   JOIN PEDIDO_DETALLE d ON d.ID_PEDIDO = p.ID_PEDIDO
+   JOIN PLATILLOS pl ON pl.ID_PLATILLO = d.ID_PLATILLO
+   WHERE p.ID_CUENTA = ?
+   ORDER BY p.ID_PEDIDO DESC`,
+  [idCuenta],
+  (err, rows) => {
+    if (err) {
+      console.error("Error al obtener pedidos:", err);
+      return res.status(500).json({ error: "Error obteniendo pedidos" });
+    }
+
+    console.log("🟩 Pedidos encontrados:", rows.length);
+    res.json(rows);
+  }
+);
+
+});
+
+
+
+app.post('/eliminarpedido', (req, res) => {
+  const { id } = req.body;
+
+  db.query(
+    "DELETE FROM pedidos WHERE ID_PEDIDO = ?",
+    [id],
+    (err, result) => {
+      if (err) {
+        console.log("Error eliminando pedido:", err);
+        return res.status(500).json({ ok: false, mensaje: "Error al eliminar" });
+      }
+
+      res.json({ ok: true, mensaje: "Pedido eliminado" });
+    }
+  );
+});
+
+
+app.get('/vendedor/getPedidos', (req, res) => {
+  const query = `
+    SELECT 
+      p.ID_PEDIDO,
+      p.ID_CUENTA,
+      c.NOMBRE AS NOMBRE_CLIENTE,
+      p.FECHA_COMPRA,
+      p.ESTADO,
+      d.ID_DETALLE,
+      d.ID_PLATILLO,
+      d.CANTIDAD,
+      (d.CANTIDAD * d.PRECIO_UNITARIO) AS SUBTOTAL,
+      pl.NOMBRE AS NOMBRE_PLATILLO
+    FROM PEDIDOS p
+    JOIN PEDIDO_DETALLE d ON p.ID_PEDIDO = d.ID_PEDIDO
+    JOIN PLATILLOS pl ON pl.ID_PLATILLO = d.ID_PLATILLO
+    JOIN CUENTAS c ON c.ID_CUENTA = p.ID_CUENTA
+    ORDER BY p.ID_PEDIDO DESC, d.ID_DETALLE ASC
+  `;
+
+  db.query(query, (err, rows) => {
+    if (err) {
+      console.error('Error obteniendo pedidos vendedor:', err);
+      return res.status(500).json({ ok: false });
+    }
+
+    const pedidosMap = {};
+
+    rows.forEach(r => {
+      if (!pedidosMap[r.ID_PEDIDO]) {
+        pedidosMap[r.ID_PEDIDO] = {
+          ID_PEDIDO: r.ID_PEDIDO,
+          ID_CUENTA: r.ID_CUENTA,
+          NOMBRE_CLIENTE: r.NOMBRE_CLIENTE,
+          FECHA_COMPRA: r.FECHA_COMPRA,
+          ESTADO: r.ESTADO,
+          platillos: []
+        };
+      }
+
+      pedidosMap[r.ID_PEDIDO].platillos.push({
+        ID_PLATILLO: r.ID_PLATILLO,
+        NOMBRE_PLATILLO: r.NOMBRE_PLATILLO,
+        CANTIDAD: r.CANTIDAD,
+        SUBTOTAL: r.SUBTOTAL
+      });
+    });
+
+    res.json({ ok: true, pedidos: Object.values(pedidosMap) });
+  });
+});
+
+// Actualizar estado de un pedido
+app.post('/vendedor/actualizarestado', (req, res) => {
+  const { id, estado } = req.body;
+
+  if (!id || !estado) {
+    return res.status(400).json({ ok: false, mensaje: 'Faltan datos' });
+  }
+
+  db.query(
+    'UPDATE PEDIDOS SET ESTADO = ? WHERE ID_PEDIDO = ?',
+    [estado, id],
+    (err, result) => {
+      if (err) {
+        console.error("Error actualizando estado:", err);
+        return res.status(500).json({ ok: false, mensaje: 'Error al actualizar estado' });
+      }
+
+      res.json({ ok: true, mensaje: 'Estado actualizado' });
+    }
+  );
+});
+
+// GUARDAR PEDIDO EN BD
+app.post("/pedidosbd", (req, res) => {
+  const { items } = req.body;
+
+  // 🟢 Obtener ID_CUENTA desde cookie
+  const ID_CUENTA = req.cookies.id_cuenta;
+
+  if (!ID_CUENTA) {
+    return res.status(401).json({
+      ok: false,
+      mensaje: "No es posible identificar la sesión del usuario"
+    });
+  }
+
+  if (!items || !items.length) {
+    return res.status(400).json({ ok: false, mensaje: "Sin items" });
+  }
+
+  const total = items.reduce((s, it) => s + (it.qty * it.price), 0);
+
+  // Insertar pedido principal
+  db.query(
+    "INSERT INTO PEDIDOS (ID_CUENTA, FECHA_COMPRA, TOTAL, ESTADO) VALUES (?, NOW(), ?, 'prep')",
+    [ID_CUENTA, total],
+    (err, result) => {
+      if (err) {
+        console.error("Error insertando pedido:", err);
+        return res.status(500).json({
+          ok: false,
+          mensaje: "Error al guardar pedido"
         });
       }
-      const pedidoId = result.insertId;
 
-      // Insertar detalle pedido
-      const detalles = items.map(i => [pedidoId, i.id, i.qty, i.price]);
-      db.query('INSERT INTO DETALLE_PEDIDO (ID_PEDIDO, ID_PLATILLO, CANTIDAD, PRECIO) VALUES ?', [detalles], err3 => {
-        
-        if (err3) {
-          return res.json({ 
-            ok: false, 
-            mensaje: 'Error al guardar detalle' 
+      const idPedido = result.insertId;
+
+      // Insertar detalles
+      const values = items.map(i => [
+        idPedido,
+        i.id,
+        i.qty,
+        i.price
+      ]);
+
+      db.query(
+        "INSERT INTO PEDIDO_DETALLE (ID_PEDIDO, ID_PLATILLO, CANTIDAD, PRECIO_UNITARIO) VALUES ?",
+        [values],
+        (err2) => {
+          if (err2) {
+            console.error("Error insertando detalles:", err2);
+            return res.status(500).json({
+              ok: false,
+              mensaje: "Error en detalles"
+            });
+          }
+
+          res.json({
+            ok: true,
+            mensaje: "Pedido guardado",
+            idPedido
           });
         }
-        return res.json({ 
-          ok: true, 
-          mensaje: 'Pedido confirmado' 
-        });
-      });
-    });
-  });
-});
-
-
-
-
-
-
-
-
-
-
-// OBTENER PEDIDOS DEL CLIENTE
-app.get('/pedidos', (req, res) => {
-  const token = req.cookies.token_sesion;
-  if (!token) {
-    return res.json({ 
-      ok: false, 
-      mensaje: 'No hay sesión' 
-    });
-  }
-
-  db.query('SELECT ID_CUENTA FROM CUENTAS WHERE token_sesion = ?', [token], (err, cliResults) => {
-    
-    if (err || cliResults.length === 0) {
-      return res.json({ 
-        ok: false, 
-        mensaje: 'Usuario no encontrado' 
-      });
+      );
     }
-    const clienteId = cliResults[0].ID_CUENTA;
-
-    const query = `
-      
-      SELECT p.ID_PEDIDO, p.STATUS, p.TOTAL, dp.ID_PLATILLO, dp.CANTIDAD, dp.PRECIO, pl.NOMBRE
-      
-      FROM PEDIDOS p
-      
-      JOIN DETALLE_PEDIDO dp ON p.ID_PEDIDO = dp.ID_PEDIDO
-      
-      JOIN PLATILLOS pl ON dp.ID_PLATILLO = pl.ID_PLATILLO
-      
-      WHERE p.ID_CUENTA = ?
-      
-      ORDER BY p.ID_PEDIDO DESC
-    `;
-    db.query(query, [clienteId], (err2, results) => {
-      if (err2) {
-        return res.json({ 
-          ok: false, 
-          mensaje: 'Error al consultar pedidos' 
-        });
-      }
-
-      const pedidos = [];
-      results.forEach(r => {
-        let p = pedidos.find(x => x.id === r.ID_PEDIDO);
-        if (!p) {
-          p = { id: r.ID_PEDIDO, status: r.STATUS, total: r.TOTAL, items: [] };
-          pedidos.push(p);
-        }
-        p.items.push({ id: r.ID_PLATILLO, name: r.NOMBRE, qty: r.CANTIDAD, price: r.PRECIO });
-      });
-    res.json(pedidos);
-    });
-  });
+  );
 });
 
+//PARA EL ADMIN
+app.get("/obtenerpedidos_admin", (req, res) => {
+  db.query(
+    `SELECT 
+        p.ID_PEDIDO,
+        p.ID_CUENTA,
+        p.FECHA_COMPRA,
+        p.TOTAL,
+        p.ESTADO
+     FROM PEDIDOS p
+     ORDER BY p.ID_PEDIDO DESC`,
+    (err, rows) => {
+      if (err) {
+        console.error("Error:", err);
+        return res.status(500).json({ error: "Error obteniendo pedidos" });
+      }
+      res.json(rows);
+    }
+  );
+});
 
+// ACTIVAR / DESACTIVAR PLATILLO
+app.post('/platillos/toggle', (req, res) => {
+  const { id } = req.body;
 
+  const sql = `
+    UPDATE PLATILLOS 
+    SET ACTIVO = CASE WHEN ACTIVO = 1 THEN 0 ELSE 1 END
+    WHERE ID_PLATILLO = ?
+  `;
 
+  db.query(sql, [id], (err, result) => {   // ← Aquí se cambió conn por db
+    if (err) {
+      console.error("❌ Error actualizando ACTIVO:", err);
+      return res.json({ ok: false, mensaje: "Error en BD" });
+    }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    res.json({ ok: true });
+  });
+});
 
 
 
