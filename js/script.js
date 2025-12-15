@@ -236,11 +236,11 @@ $('#InitSesionBtn').onclick = async () => {
   }
 
   try {
-    const response = await fetch('/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ usuario, password })
-    });
+    const response = await fetch('http://3.81.25.64:3000/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ usuario, password })
+  });
 
     // P R O C E S A R   E L   J S O N   D E L   S E R V I D O R
     const result = await response.json(); 
