@@ -22,6 +22,14 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 
+
+
+
+
+
+
+
+
 // Conexión MySQL
 const db = mysql.createConnection({
   host: 'localhost',
@@ -954,6 +962,7 @@ app.get("/obtenerpedidos_admin", (req, res) => {
   );
 });
 
+// ACTIVAR / DESACTIVAR PLATILLO
 // ACTIVAR / DESACTIVAR PLATILLO
 app.post('/platillos/toggle', (req, res) => {
   const { id } = req.body;
