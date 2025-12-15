@@ -181,7 +181,7 @@ app.post('/crearCuenta', (req, res) => {
 });
 
 // Login con validación + generación de token
-app.post('/login', (req, res) => {
+app.post('http://3.81.25.64:3000/login', (req, res) => {
   const { usuario, password } = req.body;
 
   if (!usuario || !password) {
