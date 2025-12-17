@@ -1524,7 +1524,7 @@ $('#saveEditBtn').onclick = async () => {
   const imgFile = $('#editImg').files[0];
   if (imgFile) formData.append("imagen", imgFile);
 
-  const res = await fetch(${API_URL}/platillos/editar, {
+  const res = await fetch(`${API_URL}/platillos/editar`, {
     method: "POST",
     body: formData
   });
