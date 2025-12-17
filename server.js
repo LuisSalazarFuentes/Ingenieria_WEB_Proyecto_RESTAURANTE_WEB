@@ -7,7 +7,7 @@ const { v4: uuidv4 } = require('uuid');
 const multer = require("multer");
 const app = express();
 
-const API_URL = "http://3.81.25.64:8080";
+const API_URL = "http://3.239.91.108:8080";
 
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
