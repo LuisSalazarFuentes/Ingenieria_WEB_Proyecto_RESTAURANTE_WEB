@@ -7,7 +7,6 @@ const { v4: uuidv4 } = require('uuid');
 const multer = require("multer");
 const app = express();
 
-const API_URL = "http://3.239.91.108:8080";
 
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -49,7 +48,7 @@ db.connect(err => {
 });
 
 // Ruta principal
-app.get('${API_URL}/', (req, res) => {
+app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'ProyectoRestaurante.html'));
 });
 
@@ -125,7 +124,7 @@ function validarCredenciales(usuario, password) {
   return errores;
 }
 
-app.post('${API_URL}/crearCuenta', (req, res) => {
+app.post('/crearCuenta', (req, res) => {
   const { RegUsuario, RegPassword, RegNombre, RegAvatar } = req.body;
 
   if (!RegUsuario || !RegPassword || !RegNombre) {
@@ -183,7 +182,7 @@ app.post('${API_URL}/crearCuenta', (req, res) => {
 });
 
 // Login con validación + generación de token
-app.post('${API_URL}/login', (req, res) => {
+app.post('/login', (req, res) => {
   const { usuario, password } = req.body;
 
   if (!usuario || !password) {
@@ -280,7 +279,7 @@ app.post('${API_URL}/login', (req, res) => {
 //ENTRAR EN LA BASE DE DATOS Y BUSCAR EL USUARIO
 // Ruta protegida (requiere sesión)
 // COMPROBAR SESIÓN
-app.get('${API_URL}/bienvenido', (req, res) => {
+app.get('/bienvenido', (req, res) => {
   const token = req.cookies.token_sesion;
   if (!token) {
     return res.json({ 
@@ -309,7 +308,7 @@ app.get('${API_URL}/bienvenido', (req, res) => {
 });
 
 // Cerrar sesión
-app.get('${API_URL}/logout', async (req, res) => {
+app.get('/logout', async (req, res) => {
   const token = req.cookies.token_sesion;
 
   if (token) {
@@ -384,7 +383,7 @@ app.get('${API_URL}/logout', async (req, res) => {
 //-----------------------seccion platillo-----------------------
 
 //AGREGAR PLATILLOS BD 
-app.post("${API_URL}/platillos", upload.single("imagen"), (req, res) => {
+app.post("/platillos", upload.single("imagen"), (req, res) => {
 
 
   if (!req.file) {
@@ -407,7 +406,7 @@ app.post("${API_URL}/platillos", upload.single("imagen"), (req, res) => {
 });
 
 //ELIMINAR LOS PLATILLOS DE LA BD 
-app.post('${API_URL}/platillos/eliminar', (req, res) => {
+app.post('/platillos/eliminar', (req, res) => {
   const { id } = req.body;
   if (!id) return res.json({ 
     ok: false, 
@@ -434,7 +433,7 @@ app.post('${API_URL}/platillos/eliminar', (req, res) => {
 app.use(express.static(path.join(__dirname)));
 
 //EDITAR PLATILLO
-app.post("${API_URL}/platillos/editar", upload.single("imagen"), (req, res) => {
+app.post("/platillos/editar", upload.single("imagen"), (req, res) => {
   const { id, nombre, precio, descripcion, categoria } = req.body;
   const nuevaImagen = req.file ? req.file.filename : null;
 
@@ -476,7 +475,7 @@ app.post("${API_URL}/platillos/editar", upload.single("imagen"), (req, res) => {
 });
 
 // OBTENER PLATILLOS
-app.get('${API_URL}/platillos', (req, res) => {
+app.get('/platillos', (req, res) => {
 
   const sql = `
     SELECT 
@@ -533,7 +532,7 @@ app.get('${API_URL}/platillos', (req, res) => {
 
 //---------------------SECCION RESEÑAS-------------------------
 // AGREGA RESEÑAS USANDO EL TOKEN DE SESION
-app.post("${API_URL}/resenas", (req, res) => {
+app.post("/resenas", (req, res) => {
   const token = req.cookies.token_sesion;
   const { ID_PLATILLO, CALIFICACION, COMENTARIOS } = req.body;
 
@@ -593,7 +592,7 @@ app.post("${API_URL}/resenas", (req, res) => {
 
 // ---------------- OBTENER RESEÑAS ----------------
 // ---------------- OBTENER RESEÑAS ----------------
-app.get("${API_URL}/resenas/:idPlatillo", (req, res) => {
+app.get("/resenas/:idPlatillo", (req, res) => {
   const id = req.params.idPlatillo;
 
   const sql = `
@@ -660,7 +659,7 @@ app.get("${API_URL}/resenas/:idPlatillo", (req, res) => {
 
 // -- MOSTRAR USUARIOS --
 // Obtener todos los usuarios (solo para administrador)
-app.get('${API_URL}/admin/getUsuarios', (req, res) => {
+app.get('/admin/getUsuarios', (req, res) => {
    console.log("📥 Se llamó a /admin/getUsuarios");  // <--- AGREGA ESTO
 
   // const sql = "SELECT ID_CUENTA AS ID, NOMBRE, EMAIL, IMAGEN, ROL FROM CUENTAS";
@@ -681,7 +680,7 @@ app.get('${API_URL}/admin/getUsuarios', (req, res) => {
 });
 
 // -- ELIMINAR USUARIO (solo administrador) ESTA SE VA A IRRR--
-app.post('${API_URL}/admin/eliminarUsuario', (req, res) => {
+app.post('/admin/eliminarUsuario', (req, res) => {
   const { id } = req.body;
 
   if (!id) {
@@ -705,7 +704,7 @@ app.post('${API_URL}/admin/eliminarUsuario', (req, res) => {
 });
 
 // -- HABILITAR / DESHABILITAR USUARIO --
-app.post('${API_URL}/admin/toggleUsuario', (req, res) => {
+app.post('/admin/toggleUsuario', (req, res) => {
   const { id } = req.body;
 
   if (!id) {
@@ -741,7 +740,7 @@ app.post('${API_URL}/admin/toggleUsuario', (req, res) => {
 
 
 
-app.get("${API_URL}/obtenerpedidos1", (req, res) => {
+app.get("/obtenerpedidos1", (req, res) => {
   const idCuenta = req.cookies.id_cuenta;
 
   // Si no existe cookie = no hay sesión válida
@@ -785,7 +784,7 @@ app.get("${API_URL}/obtenerpedidos1", (req, res) => {
 
 
 
-app.post('${API_URL}/eliminarpedido', (req, res) => {
+app.post('/eliminarpedido', (req, res) => {
   const { id } = req.body;
 
   db.query(
@@ -803,7 +802,7 @@ app.post('${API_URL}/eliminarpedido', (req, res) => {
 });
 
 
-app.get('${API_URL}/vendedor/getPedidos', (req, res) => {
+app.get('/vendedor/getPedidos', (req, res) => {
   const query = `
     SELECT 
       p.ID_PEDIDO,
@@ -856,7 +855,7 @@ app.get('${API_URL}/vendedor/getPedidos', (req, res) => {
 });
 
 // Actualizar estado de un pedido
-app.post('${API_URL}/vendedor/actualizarestado', (req, res) => {
+app.post('/vendedor/actualizarestado', (req, res) => {
   const { id, estado } = req.body;
 
   if (!id || !estado) {
@@ -878,7 +877,7 @@ app.post('${API_URL}/vendedor/actualizarestado', (req, res) => {
 });
 
 // GUARDAR PEDIDO EN BD
-app.post("${API_URL}/pedidosbd", (req, res) => {
+app.post("/pedidosbd", (req, res) => {
   const { items } = req.body;
 
   // 🟢 Obtener ID_CUENTA desde cookie
@@ -944,7 +943,7 @@ app.post("${API_URL}/pedidosbd", (req, res) => {
 });
 
 //PARA EL ADMIN
-app.get("${API_URL}/obtenerpedidos_admin", (req, res) => {
+app.get("/obtenerpedidos_admin", (req, res) => {
   db.query(
     `SELECT 
         p.ID_PEDIDO,
@@ -966,7 +965,7 @@ app.get("${API_URL}/obtenerpedidos_admin", (req, res) => {
 
 // ACTIVAR / DESACTIVAR PLATILLO
 // ACTIVAR / DESACTIVAR PLATILLO
-app.post('{API_URL}/platillos/toggle', (req, res) => {
+app.post('/platillos/toggle', (req, res) => {
   const { id } = req.body;
 
   const sql = `
@@ -988,4 +987,4 @@ app.post('{API_URL}/platillos/toggle', (req, res) => {
 
 
 
-app.listen(3000, () => console.log('🚀 Servidor corriendo en http://localhost:3000'));
+//app.listen(3000, () => console.log('🚀 Servidor corriendo en http://localhost:3000'));
