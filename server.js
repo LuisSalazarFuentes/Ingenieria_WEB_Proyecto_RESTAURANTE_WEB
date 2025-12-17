@@ -36,7 +36,7 @@ const db = mysql.createConnection({
   host: 'localhost',
   user: 'root',
   password: 'Safl982895544*',
-  database: 'detodounpoco'
+  database: 'DeTodoUnPoco'
 });
 
 db.connect(err => {
@@ -95,7 +95,7 @@ app.get('/', (req, res) => {
 
 // 🔥 LIMPIAR TOKEN DE SESIONES AL INICIAR EL SERVIDOR
 function limpiarSesiones() {
-  const query1 = 'UPDATE CUENTAS SET token_sesion = NULL';
+  const query1 = 'UPDATE cuentas SET token_sesion = NULL';
 
   db.query(query1, err => {
     if (err) console.error('❌ Error al limpiar sesiones CUENTAS:', err);
@@ -145,7 +145,7 @@ app.post('/crearCuenta', (req, res) => {
   }
 
   // 👍 Si todo está bien, revisar si el usuario ya existe
-  const queryExiste = "SELECT * FROM CUENTAS WHERE EMAIL = ?";
+  const queryExiste = "SELECT * FROM cuentas WHERE EMAIL = ?";
   db.query(queryExiste, [RegUsuario], (err, results) => {
     if (err) {
       console.error("❌ Error al consultar CUENTAS:", err);
@@ -163,7 +163,7 @@ app.post('/crearCuenta', (req, res) => {
     }
 
     // Insertar en BD
-    const queryInsert = "INSERT INTO CUENTAS (NOMBRE, EMAIL, PASSWORD,IMAGEN) VALUES (?, ?, ?, ?)";
+    const queryInsert = "INSERT INTO cuentas (NOMBRE, EMAIL, PASSWORD,IMAGEN) VALUES (?, ?, ?, ?)";
     db.query(queryInsert, [RegNombre, RegUsuario, RegPassword, RegAvatar], (err2) => {
       if (err2) {
         console.error("❌ Error al crear cuenta:", err2);
@@ -202,7 +202,7 @@ app.post('/login', (req, res) => {
   }
 
   // Buscar usuario
-  const queryUser = 'SELECT * FROM CUENTAS WHERE EMAIL = ?';
+  const queryUser = 'SELECT * FROM cuentas WHERE EMAIL = ?';
 
   db.query(queryUser, [usuario], (err, results) => {
     if (err) {
@@ -243,7 +243,7 @@ app.post('/login', (req, res) => {
     const token = uuidv4();
 
     // Guardar token
-    const sqlUpdate = 'UPDATE CUENTAS SET token_sesion = ? WHERE EMAIL = ?';
+    const sqlUpdate = 'UPDATE cuentas SET token_sesion = ? WHERE EMAIL = ?';
     db.query(sqlUpdate, [token, usuario], (err2) => {
       if (err2) {
         console.error('❌ Error al guardar token CUENTA:', err2);
@@ -288,7 +288,7 @@ app.get('/bienvenido', (req, res) => {
     });
   }
   
-  const query = 'SELECT NOMBRE, ROL, IMAGEN FROM CUENTAS WHERE token_sesion = ?';
+  const query = 'SELECT NOMBRE, ROL, IMAGEN FROM cuentas WHERE token_sesion = ?';
   // ANTES  db.query(query, [token, token], (err, results) =>
   db.query(query, [token, ], (err, results) => {
     if (err || results.length === 0) {
@@ -315,7 +315,7 @@ app.get('/logout', async (req, res) => {
     try {
       // Borrar token en la BD
       await db.promise().query(
-        'UPDATE CUENTAS SET token_sesion = NULL WHERE token_sesion = ?',
+        'UPDATE cuentas SET token_sesion = NULL WHERE token_sesion = ?',
         [token]
       );
 
@@ -394,7 +394,7 @@ app.post("/platillos", upload.single("imagen"), (req, res) => {
   const imagen = req.file.filename;
 
   const sql = `
-    INSERT INTO PLATILLOS (Nombre, precio, DESCRIPCION, categoria, IMAGEN)
+    INSERT INTO platillos (Nombre, precio, DESCRIPCION, categoria, IMAGEN)
     VALUES (?, ?, ?, ?, ?)
   `;
 
@@ -413,7 +413,7 @@ app.post('/platillos/eliminar', (req, res) => {
     mensaje: 'No se recibió ID del platillo' 
   });
 
-  const sql = 'DELETE FROM PLATILLOS WHERE ID_PLATILLO = ?';
+  const sql = 'DELETE FROM platillos WHERE ID_PLATILLO = ?';
   db.query(sql, [id], (err, result) => {
     if (err) {
       console.error('Error al eliminar platillo:', err);
@@ -444,8 +444,7 @@ app.post("/platillos/editar", upload.single("imagen"), (req, res) => {
   }
 
   let sql = `
-    UPDATE PLATILLOS 
-    SET Nombre = ?, PRECIO = ?, DESCRIPCION = ?, CATEGORIA = ?
+    UPDATE platillos SET Nombre = ?, PRECIO = ?, DESCRIPCION = ?, CATEGORIA = ?
   `;
   let params = [nombre, precio, descripcion, categoria];
 
@@ -559,7 +558,7 @@ app.post("/resenas", (req, res) => {
   }
 
   // 🔥 BUSCAR ID_CUENTA usando el token
-  const userQuery = "SELECT ID_CUENTA FROM CUENTAS WHERE token_sesion = ?";
+  const userQuery = "SELECT ID_CUENTA FROM cuentas WHERE token_sesion = ?";
 
   db.query(userQuery, [token], (err, data) => {
     if (err || data.length === 0) {
@@ -573,7 +572,7 @@ app.post("/resenas", (req, res) => {
 
     // 🔥 Insertar reseña con el ID correcto
     const sql = `
-      INSERT INTO RESEÑAS 
+      INSERT INTO reseñas
       (ID_PLATILLO, ID_CUENTA, CALIFICACION, COMENTARIOS)
       VALUES (?, ?, ?, ?)
     `;
@@ -600,8 +599,8 @@ app.get("/resenas/:idPlatillo", (req, res) => {
       r.COMENTARIOS,
       r.FECHA,
       COALESCE(c.NOMBRE, 'Anónimo') AS usuario
-    FROM RESEÑAS r
-    LEFT JOIN CUENTAS c ON r.ID_CUENTA = c.ID_CUENTA
+    FROM reseñas r
+    LEFT JOIN cuentas c ON r.ID_CUENTA = c.ID_CUENTA
     WHERE r.ID_PLATILLO = ?
     ORDER BY r.FECHA DESC
   `;
@@ -662,7 +661,7 @@ app.get('/admin/getUsuarios', (req, res) => {
    console.log("📥 Se llamó a /admin/getUsuarios");  // <--- AGREGA ESTO
 
   // const sql = "SELECT ID_CUENTA AS ID, NOMBRE, EMAIL, IMAGEN, ROL FROM CUENTAS";
-  const sql = "SELECT ID_CUENTA AS ID, NOMBRE, EMAIL, IMAGEN, ROL, ACTIVO FROM CUENTAS";
+  const sql = "SELECT ID_CUENTA AS ID, NOMBRE, EMAIL, IMAGEN, ROL, ACTIVO FROM cuentas";
 
 
   db.query(sql, (err, rows) => {
@@ -686,7 +685,7 @@ app.post('/admin/eliminarUsuario', (req, res) => {
     return res.json({ ok: false, mensaje: "ID no proporcionado" });
   }
 
-  const sql = "DELETE FROM CUENTAS WHERE ID_CUENTA = ?";
+  const sql = "DELETE FROM cuentas WHERE ID_CUENTA = ?";
 
   db.query(sql, [id], (err, result) => {
     if (err) {
@@ -711,7 +710,7 @@ app.post('/admin/toggleUsuario', (req, res) => {
   }
 
   // Obtener estado actual
-  const getSql = "SELECT ACTIVO FROM CUENTAS WHERE ID_CUENTA = ?";
+  const getSql = "SELECT ACTIVO FROM cuentas WHERE ID_CUENTA = ?";
 
   db.query(getSql, [id], (err, rows) => {
     if (err || rows.length === 0) {
@@ -721,7 +720,7 @@ app.post('/admin/toggleUsuario', (req, res) => {
     const nuevoEstado = rows[0].ACTIVO ? 0 : 1;
 
     // Cambiar el estado
-    const updateSql = "UPDATE CUENTAS SET ACTIVO = ? WHERE ID_CUENTA = ?";
+    const updateSql = "UPDATE cuentas SET ACTIVO = ? WHERE ID_CUENTA = ?";
 
     db.query(updateSql, [nuevoEstado, id], (err2) => {
       if (err2) {
@@ -762,9 +761,9 @@ app.get("/obtenerpedidos1", (req, res) => {
       d.CANTIDAD,
       pl.NOMBRE AS NOMBRE_PLATILLO,
       pl.PRECIO AS PRECIO_UNITARIO       -- 🔥 AÑADIDO
-   FROM PEDIDOS p
-   JOIN PEDIDO_DETALLE d ON d.ID_PEDIDO = p.ID_PEDIDO
-   JOIN PLATILLOS pl ON pl.ID_PLATILLO = d.ID_PLATILLO
+   FROM pedidos p
+   JOIN pedido_detalle d ON d.ID_PEDIDO = p.ID_PEDIDO
+   JOIN platillos pl ON pl.ID_PLATILLO = d.ID_PLATILLO
    WHERE p.ID_CUENTA = ?
    ORDER BY p.ID_PEDIDO DESC`,
   [idCuenta],
@@ -814,10 +813,10 @@ app.get('/vendedor/getPedidos', (req, res) => {
       d.CANTIDAD,
       (d.CANTIDAD * d.PRECIO_UNITARIO) AS SUBTOTAL,
       pl.NOMBRE AS NOMBRE_PLATILLO
-    FROM PEDIDOS p
-    JOIN PEDIDO_DETALLE d ON p.ID_PEDIDO = d.ID_PEDIDO
-    JOIN PLATILLOS pl ON pl.ID_PLATILLO = d.ID_PLATILLO
-    JOIN CUENTAS c ON c.ID_CUENTA = p.ID_CUENTA
+    FROM pedidos p
+    JOIN pedido_detalle d ON p.ID_PEDIDO = d.ID_PEDIDO
+    JOIN platillos pl ON pl.ID_PLATILLO = d.ID_PLATILLO
+    JOIN cuentas c ON c.ID_CUENTA = p.ID_CUENTA
     ORDER BY p.ID_PEDIDO DESC, d.ID_DETALLE ASC
   `;
 
@@ -862,7 +861,7 @@ app.post('/vendedor/actualizarestado', (req, res) => {
   }
 
   db.query(
-    'UPDATE PEDIDOS SET ESTADO = ? WHERE ID_PEDIDO = ?',
+    'UPDATE pedidos SET ESTADO = ? WHERE ID_PEDIDO = ?',
     [estado, id],
     (err, result) => {
       if (err) {
@@ -897,7 +896,7 @@ app.post("/pedidosbd", (req, res) => {
 
   // Insertar pedido principal
   db.query(
-    "INSERT INTO PEDIDOS (ID_CUENTA, FECHA_COMPRA, TOTAL, ESTADO) VALUES (?, NOW(), ?, 'prep')",
+    "INSERT INTO pedidos (ID_CUENTA, FECHA_COMPRA, TOTAL, ESTADO) VALUES (?, NOW(), ?, 'prep')",
     [ID_CUENTA, total],
     (err, result) => {
       if (err) {
@@ -919,7 +918,7 @@ app.post("/pedidosbd", (req, res) => {
       ]);
 
       db.query(
-        "INSERT INTO PEDIDO_DETALLE (ID_PEDIDO, ID_PLATILLO, CANTIDAD, PRECIO_UNITARIO) VALUES ?",
+        "INSERT INTO pedido_detalle (ID_PEDIDO, ID_PLATILLO, CANTIDAD, PRECIO_UNITARIO) VALUES ?",
         [values],
         (err2) => {
           if (err2) {
@@ -950,7 +949,7 @@ app.get("/obtenerpedidos_admin", (req, res) => {
         p.FECHA_COMPRA,
         p.TOTAL,
         p.ESTADO
-     FROM PEDIDOS p
+     FROM pedidos p
      ORDER BY p.ID_PEDIDO DESC`,
     (err, rows) => {
       if (err) {
@@ -968,7 +967,7 @@ app.post('/platillos/toggle', (req, res) => {
   const { id } = req.body;
 
   const sql = `
-    UPDATE PLATILLOS 
+    UPDATE platillos 
     SET ACTIVO = CASE WHEN ACTIVO = 1 THEN 0 ELSE 1 END
     WHERE ID_PLATILLO = ?
   `;
