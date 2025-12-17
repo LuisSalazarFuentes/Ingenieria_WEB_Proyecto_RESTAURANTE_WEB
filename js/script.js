@@ -237,11 +237,12 @@ $('#InitSesionBtn').onclick = async () => {
   }
 
   try {
-    const response = await fetch('${API_URL}/login', {
+    const response = await fetch(${API_URL}/login, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ usuario, password })
   });
+
 
 
     // P R O C E S A R   E L   J S O N   D E L   S E R V I D O R
@@ -253,7 +254,7 @@ $('#InitSesionBtn').onclick = async () => {
       $('#InicioSesion').style.display = 'none'; // Ocultar modal
       
       try {
-        const bw = await fetch('${API_URL}/bienvenido');
+        const bw = await fetch(${API_URL}/bienvenido);
         const bwj = await bw.json();
         if (bwj.ok) {
           // Guardar en localStorage (para mostrar en header)
@@ -352,7 +353,7 @@ $('#CrearCuentaBtn').onclick = async () => {
   }
 
   try {
-    const respuesta = await fetch('${API_URL}/crearCuenta', {
+    const respuesta = await fetch(${API_URL}/crearCuenta, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
@@ -394,7 +395,7 @@ $('#CerrarCrearBtn').onclick = () => $('#CrearCuenta').style.display = 'none';
 //CERRAR SESION 
 $('#CloseBtn').onclick = async () => {
   try {
-    await fetch('${API_URL}/logout');
+    await fetch(${API_URL}/logout);
   } catch (err) {
     console.warn('Error al llamar /logout', err);
   }
@@ -672,7 +673,7 @@ function checkout() {
   const items = state.cart.map(i => ({ id: i.id, qty: i.qty, price: i.price }));
   (async () => {
     try {
-      const res = await fetch('${API_URL}/pedidosbd', {
+      const res = await fetch(${API_URL}/pedidosbd, {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ items })
@@ -752,7 +753,7 @@ function checkout() {
 // ----------------- PEDIDOS CLIENTE -----------------
 async function renderClientOrders() {
   try {
-    const res = await fetch("${API_URL}/obtenerpedidos1", {
+    const res = await fetch(${API_URL}/obtenerpedidos1, {
       credentials: "include"
     });
 
@@ -910,7 +911,7 @@ async function deletePedido(id) {
   if (!confirm("¿Eliminar este pedido?")) return;
 
   try {
-    const res = await fetch("${API_URL}/eliminarpedido", {
+    const res = await fetch(${API_URL}/eliminarpedido, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id })
@@ -1037,7 +1038,7 @@ $('#sendReviewBtn').onclick = async () => {
   console.log("COMENTARIOS enviados:", COMENTARIOS);
 
   try {
-    const res = await fetch('${API_URL}/resenas', {
+    const res = await fetch(${API_URL}/resenas, {
       method: 'POST',
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -1105,7 +1106,7 @@ async function renderOrdersSeller() {
   wrap.innerHTML = '';
 
   try {
-    const res = await fetch('${API_URL}/vendedor/getPedidos');
+    const res = await fetch(${API_URL}/vendedor/getPedidos);
     const data = await res.json();
 
     if (!data.ok) {
@@ -1218,7 +1219,7 @@ async function renderOrdersSeller() {
   if (light.classList.contains('done')) nuevoEstado = 'done';
 
   try {
-    const res = await fetch('${API_URL}/vendedor/actualizarestado', {
+    const res = await fetch(${API_URL}/vendedor/actualizarestado, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id, estado: nuevoEstado })
@@ -1273,7 +1274,7 @@ async function renderOrdersSeller() {
 //agregar y eliminar platillos
 async function renderAdminKpis() {
   try {
-    const res = await fetch('${API_URL}/obtenerpedidos_admin');
+    const res = await fetch(${API_URL}/obtenerpedidos_admin);
     const orders = await res.json();
 
     const menu = storage.get('menu', []);
@@ -1328,7 +1329,7 @@ $('#addDishBtn').onclick = async () => {
   formData.append("categoria", cat);
   formData.append("imagen", imgFile); // ❗ nombre exacto como en multer
 
-  const res = await fetch("${API_URL}/platillos", {
+  const res = await fetch(${API_URL}/platillos, {
     method: "POST",
     body: formData
   });
@@ -1360,7 +1361,7 @@ async function handleTogglePlatillo(e) {
 
   const id = btn.getAttribute('data-toggle-platillo');
 
-  const res = await fetch('${API_URL}/platillos/toggle', {
+  const res = await fetch(${API_URL}/platillos/toggle, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ id })
@@ -1424,7 +1425,7 @@ function renderAdminMenuList() {
     if (delId) {
       if (!confirm('¿Eliminar este platillo?')) return;
       try {
-        const res = await fetch('${API_URL}/platillos/eliminar', {
+        const res = await fetch(${API_URL}/platillos/eliminar, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id: delId })
@@ -1458,7 +1459,7 @@ function renderAdminMenuList() {
     const toggleId = e.target.dataset.toggleId;
     if (toggleId) {
       try {
-        const res = await fetch('${API_URL}/platillos/toggle', {
+        const res = await fetch(${API_URL}/platillos/toggle, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id: toggleId })
@@ -1523,7 +1524,7 @@ $('#saveEditBtn').onclick = async () => {
   const imgFile = $('#editImg').files[0];
   if (imgFile) formData.append("imagen", imgFile);
 
-  const res = await fetch("${API_URL}/platillos/editar", {
+  const res = await fetch(${API_URL}/platillos/editar, {
     method: "POST",
     body: formData
   });
@@ -1573,7 +1574,7 @@ $('#cancelEditBtn').onclick = () => {$('#editDishModal').style.display = 'none';
 // Trae los platillos desde el backend
 async function cargarPlatillos() {
   try {
-    const res = await fetch('${API_URL}/platillos');
+    const res = await fetch(${API_URL}/platillos);
     const platillos = await res.json();
     if (Array.isArray(platillos)) {
       console.log('Platillos recibidos:', platillos);
@@ -1634,7 +1635,7 @@ async function handleDelete(e) {
   if (!confirm("¿Eliminar este usuario?")) return;
 
   try {
-    const res = await fetch('/admin/eliminarUsuario', {
+    const res = await fetch(${API_URL}/admin/eliminarUsuario, {
       method: 'POST',
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id })
@@ -1656,7 +1657,7 @@ async function handleToggle(e) {
 
   const id = btn.getAttribute('data-toggle-id');
 
-  const res = await fetch('/admin/toggleUsuario', {
+  const res = await fetch(${API_URL}/admin/toggleUsuario, {
     method: 'POST',
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ id })
@@ -1677,7 +1678,7 @@ async function handleToggle(e) {
 async function cargarUsuariosAdmin() {
 
   try {
-    const res = await fetch('/admin/getUsuarios');
+    const res = await fetch(${API_URL}/admin/getUsuarios);
     const data = await res.json();
 
     if (!data.ok) {
@@ -1774,7 +1775,7 @@ window.onload = async () => {
   await cargarPlatillos(); // Trae los platillos desde el backend
   initAvatarSelector();
   // Verificar si hay sesión REAL en el servidor
-  const bw = await fetch('/bienvenido');
+  const bw = await fetch(${API_URL}/bienvenido);
   const session = await bw.json();
 
   if (!session.ok) {
