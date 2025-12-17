@@ -429,8 +429,7 @@ app.post('/platillos/eliminar', (req, res) => {
   });
 });
 
-// LINEA HASTA EL FINAL 
-app.use(express.static(path.join(__dirname)));
+
 
 //EDITAR PLATILLO
 app.post("/platillos/editar", upload.single("imagen"), (req, res) => {
@@ -986,5 +985,6 @@ app.post('/platillos/toggle', (req, res) => {
 
 
 
-
-//app.listen(3000, () => console.log('🚀 Servidor corriendo en http://localhost:3000'));
+// LINEA HASTA EL FINAL 
+app.use(express.static(path.join(__dirname)));
+app.listen(8080, () => console.log('🚀 Servidor corriendo en http://0.0.0.0:8080'));
