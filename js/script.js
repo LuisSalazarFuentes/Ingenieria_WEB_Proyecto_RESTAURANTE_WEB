@@ -10,7 +10,7 @@ const storage = {
 const $ = s => document.querySelector(s);
 const fmt = n => n.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' });
 
-const API_URL = "http://3.81.25.64:8080";
+const API_URL = "http://3.239.91.108:8080";
 
 function mostrarMensaje(texto) {
   alert(texto);
