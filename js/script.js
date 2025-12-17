@@ -395,7 +395,7 @@ $('#CerrarCrearBtn').onclick = () => $('#CrearCuenta').style.display = 'none';
 //CERRAR SESION 
 $('#CloseBtn').onclick = async () => {
   try {
-    await fetch(${API_URL}/logout);
+    await fetch(`${API_URL}/logout`);
   } catch (err) {
     console.warn('Error al llamar /logout', err);
   }
