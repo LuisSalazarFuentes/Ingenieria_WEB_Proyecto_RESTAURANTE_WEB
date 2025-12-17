@@ -10,7 +10,6 @@ const storage = {
 const $ = s => document.querySelector(s);
 const fmt = n => n.toLocaleString('es-MX', { style: 'currency', currency: 'MXN' });
 
-const API_URL = "http://3.239.91.108:8080";
 
 function mostrarMensaje(texto) {
   alert(texto);
@@ -22,6 +21,25 @@ window.fetch = function(url, options = {}) {
   options.credentials = "include";
   return originalFetch(url, options);
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -218,13 +236,11 @@ $('#InitSesionBtn').onclick = async () => {
   }
 
   try {
-    const response = await fetch(`${API_URL}/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ usuario, password })
-  });
-
-
+    const response = await fetch('/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ usuario, password })
+    });
 
     // P R O C E S A R   E L   J S O N   D E L   S E R V I D O R
     const result = await response.json(); 
@@ -235,7 +251,7 @@ $('#InitSesionBtn').onclick = async () => {
       $('#InicioSesion').style.display = 'none'; // Ocultar modal
       
       try {
-        const bw = await fetch(`${API_URL}/bienvenido`);
+        const bw = await fetch('/bienvenido');
         const bwj = await bw.json();
         if (bwj.ok) {
           // Guardar en localStorage (para mostrar en header)
@@ -334,7 +350,7 @@ $('#CrearCuentaBtn').onclick = async () => {
   }
 
   try {
-    const respuesta = await fetch(`${API_URL}/crearCuenta`, {
+    const respuesta = await fetch('/crearCuenta', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
@@ -376,7 +392,7 @@ $('#CerrarCrearBtn').onclick = () => $('#CrearCuenta').style.display = 'none';
 //CERRAR SESION 
 $('#CloseBtn').onclick = async () => {
   try {
-    await fetch(`${API_URL}/logout`);
+    await fetch('/logout');
   } catch (err) {
     console.warn('Error al llamar /logout', err);
   }
@@ -443,14 +459,14 @@ function renderMenu() {
 
   let menu = storage.get('menu', []);
 
-  // FILTRAR SOLO PLATILLOS ACTIVOS DESCOMENTAR PARA VER LOS PLATILLOS
+  // FILTRAR SOLO platillos ACTIVOS DESCOMENTAR PARA VER LOS platillos
    menu = menu.filter(m => m.activo);  // <-- aquí
 
 // Normalizar valores para evitar undefined
    menu = menu.map(m => ({
    ...m,
    promedio: m.promedio ?? 0,
-   totalReseñas: m.totalReseñas ?? 0
+   totalreseñas: m.totalreseñas ?? 0
 }));
 
 
@@ -459,7 +475,7 @@ function renderMenu() {
     menu = menu.map(m => ({
    ...m,
   promedio: m.promedio ?? 0,
-  totalReseñas: m.totalReseñas ?? 0
+  totalreseñas: m.totalreseñas ?? 0
   }));
 
   
@@ -490,7 +506,7 @@ function renderMenu() {
     const reviews = Array.isArray(m.reviews) ? m.reviews : [];
     const avgRating = reviews.length ? (reviews.reduce((s, r) => s + r.rating, 0) / reviews.length) : 0;
 
-    // SECCION QUE AGREGA LOS PLATILLOS AL FRONT
+    // SECCION QUE AGREGA LOS platillos AL FRONT
     // SE DEBE AGREGAR LAS DIRECCIONES A LA BASE DE DATOS PARA EXTRAER LA INFORMACION DE CADA UNO
     //HTML de cada platillo
   
@@ -506,7 +522,7 @@ function renderMenu() {
         
         <div>${m.category ? '<span class="category">' + m.category + '</span>' : ''}</div>
         
-        <div>⭐ ${m.promedio} (${m.totalReseñas})</div>
+        <div>⭐ ${m.promedio} (${m.totalreseñas})</div>
 
         
         <div class="row" style="justify-content:space-between;margin-top:8px">
@@ -519,7 +535,7 @@ function renderMenu() {
           }
 
           
-          <button class="btn acc" data-review="${m.id}">Reseñas</button>
+          <button class="btn acc" data-review="${m.id}">reseñas</button>
         </div>
       </div>`;
     wrap.appendChild(card);
@@ -654,7 +670,7 @@ function checkout() {
   const items = state.cart.map(i => ({ id: i.id, qty: i.qty, price: i.price }));
   (async () => {
     try {
-      const res = await fetch(`${API_URL}/pedidosbd`, {
+      const res = await fetch('/pedidosbd', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ items })
@@ -697,7 +713,7 @@ function checkout() {
 
 
 
-// PEDIDOS POR CLIENTE EN BD 
+// pedidos POR CLIENTE EN BD 
 // CONFIRMAR PEDIDO
 
 
@@ -731,16 +747,16 @@ function checkout() {
 
 
 
-// ----------------- PEDIDOS CLIENTE -----------------
+// ----------------- pedidos CLIENTE -----------------
 async function renderClientOrders() {
   try {
-    const res = await fetch(`${API_URL}/obtenerpedidos1`, {
+    const res = await fetch("/obtenerpedidos1", {
       credentials: "include"
     });
 
     if (res.status === 401) {
       console.warn("⚠ No hay sesión, no se mostrarán pedidos.");
-      limpiarPedidos();
+      limpiarpedidos();
       return;
     }
 
@@ -779,7 +795,7 @@ async function renderClientOrders() {
     const existing = document.getElementById('clientOrders');
     if (existing) existing.remove();
 
-    // === SEPARAR PEDIDOS ===
+    // === SEPARAR pedidos ===
     const activos = pedidosArray.filter(p => p.estado !== "done");
     const historial = pedidosArray.filter(p => p.estado === "done");
 
@@ -876,7 +892,7 @@ function cardPedido(p) {
 
 
 // 🔥 Función auxiliar para borrar pedidos si no hay sesión
-function limpiarPedidos() {
+function limpiarpedidos() {
   const existing = document.getElementById("clientOrders");
   if (existing) existing.remove();
 }
@@ -892,7 +908,7 @@ async function deletePedido(id) {
   if (!confirm("¿Eliminar este pedido?")) return;
 
   try {
-    const res = await fetch(`${API_URL}/eliminarpedido`, {
+    const res = await fetch("/eliminarpedido", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id })
@@ -937,7 +953,7 @@ async function deletePedido(id) {
 
 
 
-// ----------------- RESEÑAS -----------------
+// ----------------- reseñas -----------------
 // Modal para ver y agregar reseñas
 async function openReviewModal() {
 
@@ -945,11 +961,11 @@ async function openReviewModal() {
   const prod = menu.find(m => m.id == state.currentReview);
   if (!prod) return alert('Producto no encontrado');
 
-  $('#modalTitle').textContent = `Reseñas de ${prod.name}`;
+  $('#modalTitle').textContent = `reseñas de ${prod.name}`;
   $('#reviewList').innerHTML = '<div class="muted">Cargando reseñas...</div>';
 
   try {
-    const res = await fetch(`${API_URL}/resenas/${prod.id}`);
+    const res = await fetch(`/resenas/${prod.id}`);
     const data = await res.json();
 
     if (!data.ok) {
@@ -970,7 +986,7 @@ async function openReviewModal() {
     }
     // 🔥 Guardar promedio y total en el producto y actualizar menú
     prod.promedio = data.promedio ?? 0;
-    prod.totalReseñas = data.total ?? 0;
+    prod.totalreseñas = data.total ?? 0;
 
     // Actualizar menú en localStorage
     storage.set('menu', menu);
@@ -1019,7 +1035,7 @@ $('#sendReviewBtn').onclick = async () => {
   console.log("COMENTARIOS enviados:", COMENTARIOS);
 
   try {
-    const res = await fetch(`${API_URL}/resenas`, {
+    const res = await fetch('/resenas', {
       method: 'POST',
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -1073,7 +1089,7 @@ $('#closeReviewBtn').onclick = () => $('#reviewModal').style.display = 'none';
 
 
 
-// ----------------- PEDIDOS VENDEDOR ----------------
+// ----------------- pedidos VENDEDOR ----------------
 //renderiza pedidos para el vendedor
 
 function estadoTexto(st) {
@@ -1087,7 +1103,7 @@ async function renderOrdersSeller() {
   wrap.innerHTML = '';
 
   try {
-    const res = await fetch(`${API_URL}/vendedor/getPedidos`);
+    const res = await fetch('/vendedor/getpedidos');
     const data = await res.json();
 
     if (!data.ok) {
@@ -1200,7 +1216,7 @@ async function renderOrdersSeller() {
   if (light.classList.contains('done')) nuevoEstado = 'done';
 
   try {
-    const res = await fetch(`${API_URL}/vendedor/actualizarestado`, {
+    const res = await fetch('/vendedor/actualizarestado', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id, estado: nuevoEstado })
@@ -1255,7 +1271,7 @@ async function renderOrdersSeller() {
 //agregar y eliminar platillos
 async function renderAdminKpis() {
   try {
-    const res = await fetch(`${API_URL}/obtenerpedidos_admin`);
+    const res = await fetch('/obtenerpedidos_admin');
     const orders = await res.json();
 
     const menu = storage.get('menu', []);
@@ -1272,7 +1288,7 @@ async function renderAdminKpis() {
 
     // PINTAR KPI EN EL FRONT
     $('#kpiVentas').textContent = fmt(ventas);
-    $('#kpiPedidos').textContent = orders.length;
+    $('#kpipedidos').textContent = orders.length;
     $('#kpiTicket').textContent = fmt(ticket);
     $('#kpiMenu').textContent = menu.length;
     
@@ -1310,7 +1326,7 @@ $('#addDishBtn').onclick = async () => {
   formData.append("categoria", cat);
   formData.append("imagen", imgFile); // ❗ nombre exacto como en multer
 
-  const res = await fetch(`${API_URL}/platillos`, {
+  const res = await fetch("/platillos", {
     method: "POST",
     body: formData
   });
@@ -1321,7 +1337,7 @@ $('#addDishBtn').onclick = async () => {
   alert(data.message);
 
 // 🔥 volver a cargar platillos DESDE MYSQL
-await cargarPlatillos();
+await cargarplatillos();
 
 // 🔥 volver a renderizar el menú, filtros y admin
 renderAll();
@@ -1342,7 +1358,7 @@ async function handleTogglePlatillo(e) {
 
   const id = btn.getAttribute('data-toggle-platillo');
 
-  const res = await fetch(`${API_URL}/platillos/toggle`, {
+  const res = await fetch('/platillos/toggle', {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ id })
@@ -1354,7 +1370,7 @@ async function handleTogglePlatillo(e) {
     return;
   }
 
-  await cargarPlatillos(); // recargar lista
+  await cargarplatillos(); // recargar lista
   renderAll(); // refrescar menú/admin
 }
 
@@ -1406,7 +1422,7 @@ function renderAdminMenuList() {
     if (delId) {
       if (!confirm('¿Eliminar este platillo?')) return;
       try {
-        const res = await fetch(`${API_URL}/platillos/eliminar`, {
+        const res = await fetch('/platillos/eliminar', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id: delId })
@@ -1440,7 +1456,7 @@ function renderAdminMenuList() {
     const toggleId = e.target.dataset.toggleId;
     if (toggleId) {
       try {
-        const res = await fetch(`${API_URL}/platillos/toggle`, {
+        const res = await fetch('/platillos/toggle', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ id: toggleId })
@@ -1449,7 +1465,7 @@ function renderAdminMenuList() {
         if (!data.ok) return alert('Error: ' + data.mensaje);
 
         // recargar menú y admin
-        await cargarPlatillos();      // asegura que storage tenga el valor actualizado
+        await cargarplatillos();      // asegura que storage tenga el valor actualizado
         renderAdminMenuList();        // renderiza el panel admin con el nuevo estado
         renderAll();                  // renderiza menú y filtros visibles para front
       } catch (err) {
@@ -1505,7 +1521,7 @@ $('#saveEditBtn').onclick = async () => {
   const imgFile = $('#editImg').files[0];
   if (imgFile) formData.append("imagen", imgFile);
 
-  const res = await fetch(`${API_URL}/platillos/editar`, {
+  const res = await fetch("/platillos/editar", {
     method: "POST",
     body: formData
   });
@@ -1514,7 +1530,7 @@ $('#saveEditBtn').onclick = async () => {
   alert(data.mensaje);
 
   if (data.ok) {
-    await cargarPlatillos();
+    await cargarplatillos();
     renderAll();
     $('#editDishModal').style.display = 'none';
   }
@@ -1553,12 +1569,12 @@ $('#cancelEditBtn').onclick = () => {$('#editDishModal').style.display = 'none';
 
 // ----------------- CARGA DESDE MYSQL -----------------
 // Trae los platillos desde el backend
-async function cargarPlatillos() {
+async function cargarplatillos() {
   try {
-    const res = await fetch(`${API_URL}/platillos`);
+    const res = await fetch('/platillos');
     const platillos = await res.json();
     if (Array.isArray(platillos)) {
-      console.log('Platillos recibidos:', platillos);
+      console.log('platillos recibidos:', platillos);
       const menu = platillos.map(p => ({
         id: p.ID_PLATILLO,
         name: p.NOMBRE,
@@ -1616,7 +1632,7 @@ async function handleDelete(e) {
   if (!confirm("¿Eliminar este usuario?")) return;
 
   try {
-    const res = await fetch(`${API_URL}/admin/eliminarUsuario`, {
+    const res = await fetch('/admin/eliminarUsuario', {
       method: 'POST',
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id })
@@ -1638,7 +1654,7 @@ async function handleToggle(e) {
 
   const id = btn.getAttribute('data-toggle-id');
 
-  const res = await fetch(`${API_URL}/admin/toggleUsusario`, {
+  const res = await fetch('/admin/toggleUsuario', {
     method: 'POST',
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ id })
@@ -1659,7 +1675,7 @@ async function handleToggle(e) {
 async function cargarUsuariosAdmin() {
 
   try {
-    const res = await fetch(`${API_URL}/admin/getUsuarios`);
+    const res = await fetch('/admin/getUsuarios');
     const data = await res.json();
 
     if (!data.ok) {
@@ -1753,10 +1769,10 @@ function renderAll() {
 
 // ---------- Inicialización ---------- 
 window.onload = async () => {
-  await cargarPlatillos(); // Trae los platillos desde el backend
+  await cargarplatillos(); // Trae los platillos desde el backend
   initAvatarSelector();
   // Verificar si hay sesión REAL en el servidor
-  const bw = await fetch(`${API_URL}/bienvenido`);
+  const bw = await fetch('/bienvenido');
   const session = await bw.json();
 
   if (!session.ok) {
