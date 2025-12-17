@@ -1574,7 +1574,7 @@ $('#cancelEditBtn').onclick = () => {$('#editDishModal').style.display = 'none';
 // Trae los platillos desde el backend
 async function cargarPlatillos() {
   try {
-    const res = await fetch(${API_URL}/platillos);
+    const res = await fetch(`${API_URL}/platillos`);
     const platillos = await res.json();
     if (Array.isArray(platillos)) {
       console.log('Platillos recibidos:', platillos);
