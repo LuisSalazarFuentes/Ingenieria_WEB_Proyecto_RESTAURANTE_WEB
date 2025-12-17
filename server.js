@@ -7,7 +7,6 @@ const { v4: uuidv4 } = require('uuid');
 const multer = require("multer");
 const app = express();
 
-
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -35,8 +34,8 @@ const upload = multer({ storage });
 const db = mysql.createConnection({
   host: 'localhost',
   user: 'root',
-  password: 'Safl982895544*',
-  database: 'DeTodoUnPoco'
+  password: '123456789',
+  database: 'detodounpoco'
 });
 
 db.connect(err => {
@@ -91,15 +90,15 @@ app.get('/', (req, res) => {
 
 
 
-//------------------------SECCION CUENTAS-------------------------
+//------------------------SECCION cuentas-------------------------
 
 // 🔥 LIMPIAR TOKEN DE SESIONES AL INICIAR EL SERVIDOR
 function limpiarSesiones() {
   const query1 = 'UPDATE cuentas SET token_sesion = NULL';
 
   db.query(query1, err => {
-    if (err) console.error('❌ Error al limpiar sesiones CUENTAS:', err);
-    else console.log('🧹 Tokens limpiados en CUENTAS');
+    if (err) console.error('❌ Error al limpiar sesiones cuentas:', err);
+    else console.log('🧹 Tokens limpiados en cuentas');
   });
 } 
 
@@ -148,7 +147,7 @@ app.post('/crearCuenta', (req, res) => {
   const queryExiste = "SELECT * FROM cuentas WHERE EMAIL = ?";
   db.query(queryExiste, [RegUsuario], (err, results) => {
     if (err) {
-      console.error("❌ Error al consultar CUENTAS:", err);
+      console.error("❌ Error al consultar cuentas:", err);
       return res.json({
         ok: false,
         mensaje: "Error interno del servidor."
@@ -206,7 +205,7 @@ app.post('/login', (req, res) => {
 
   db.query(queryUser, [usuario], (err, results) => {
     if (err) {
-      console.error('❌ Error al consultar CUENTAS:', err);
+      console.error('❌ Error al consultar cuentas:', err);
       return res.json({
         ok: false,
         mensaje: 'Error interno del servidor.'
@@ -382,7 +381,7 @@ app.get('/logout', async (req, res) => {
 
 //-----------------------seccion platillo-----------------------
 
-//AGREGAR PLATILLOS BD 
+//AGREGAR platillos BD 
 app.post("/platillos", upload.single("imagen"), (req, res) => {
 
 
@@ -405,7 +404,7 @@ app.post("/platillos", upload.single("imagen"), (req, res) => {
   });
 });
 
-//ELIMINAR LOS PLATILLOS DE LA BD 
+//ELIMINAR LOS platillos DE LA BD 
 app.post('/platillos/eliminar', (req, res) => {
   const { id } = req.body;
   if (!id) return res.json({ 
@@ -429,7 +428,8 @@ app.post('/platillos/eliminar', (req, res) => {
   });
 });
 
-
+// LINEA HASTA EL FINAL 
+app.use(express.static(path.join(__dirname)));
 
 //EDITAR PLATILLO
 app.post("/platillos/editar", upload.single("imagen"), (req, res) => {
@@ -444,7 +444,8 @@ app.post("/platillos/editar", upload.single("imagen"), (req, res) => {
   }
 
   let sql = `
-    UPDATE platillos SET Nombre = ?, PRECIO = ?, DESCRIPCION = ?, CATEGORIA = ?
+    UPDATE platillos 
+    SET Nombre = ?, PRECIO = ?, DESCRIPCION = ?, CATEGORIA = ?
   `;
   let params = [nombre, precio, descripcion, categoria];
 
@@ -472,16 +473,16 @@ app.post("/platillos/editar", upload.single("imagen"), (req, res) => {
   });
 });
 
-// OBTENER PLATILLOS
+// OBTENER platillos
 app.get('/platillos', (req, res) => {
 
   const sql = `
     SELECT 
       p.*,
       COALESCE(AVG(r.CALIFICACION), 0) AS promedio,
-      COUNT(r.ID_RESEÑA) AS totalReseñas
-    FROM PLATILLOS p
-    LEFT JOIN RESEÑAS r ON r.ID_PLATILLO = p.ID_PLATILLO
+      COUNT(r.ID_RESEÑA) AS totalreseñas
+    FROM platillos p
+    LEFT JOIN reseñas r ON r.ID_PLATILLO = p.ID_PLATILLO
     GROUP BY p.ID_PLATILLO
   `;
 
@@ -528,8 +529,8 @@ app.get('/platillos', (req, res) => {
 
 
 
-//---------------------SECCION RESEÑAS-------------------------
-// AGREGA RESEÑAS USANDO EL TOKEN DE SESION
+//---------------------SECCION reseñas-------------------------
+// AGREGA reseñas USANDO EL TOKEN DE SESION
 app.post("/resenas", (req, res) => {
   const token = req.cookies.token_sesion;
   const { ID_PLATILLO, CALIFICACION, COMENTARIOS } = req.body;
@@ -572,7 +573,7 @@ app.post("/resenas", (req, res) => {
 
     // 🔥 Insertar reseña con el ID correcto
     const sql = `
-      INSERT INTO reseñas
+      INSERT INTO reseñas 
       (ID_PLATILLO, ID_CUENTA, CALIFICACION, COMENTARIOS)
       VALUES (?, ?, ?, ?)
     `;
@@ -588,8 +589,8 @@ app.post("/resenas", (req, res) => {
 });
 
 
-// ---------------- OBTENER RESEÑAS ----------------
-// ---------------- OBTENER RESEÑAS ----------------
+// ---------------- OBTENER reseñas ----------------
+// ---------------- OBTENER reseñas ----------------
 app.get("/resenas/:idPlatillo", (req, res) => {
   const id = req.params.idPlatillo;
 
@@ -660,7 +661,7 @@ app.get("/resenas/:idPlatillo", (req, res) => {
 app.get('/admin/getUsuarios', (req, res) => {
    console.log("📥 Se llamó a /admin/getUsuarios");  // <--- AGREGA ESTO
 
-  // const sql = "SELECT ID_CUENTA AS ID, NOMBRE, EMAIL, IMAGEN, ROL FROM CUENTAS";
+  // const sql = "SELECT ID_CUENTA AS ID, NOMBRE, EMAIL, IMAGEN, ROL FROM cuentas";
   const sql = "SELECT ID_CUENTA AS ID, NOMBRE, EMAIL, IMAGEN, ROL, ACTIVO FROM cuentas";
 
 
@@ -773,7 +774,7 @@ app.get("/obtenerpedidos1", (req, res) => {
       return res.status(500).json({ error: "Error obteniendo pedidos" });
     }
 
-    console.log("🟩 Pedidos encontrados:", rows.length);
+    console.log("🟩 pedidos encontrados:", rows.length);
     res.json(rows);
   }
 );
@@ -800,7 +801,7 @@ app.post('/eliminarpedido', (req, res) => {
 });
 
 
-app.get('/vendedor/getPedidos', (req, res) => {
+app.get('/vendedor/getpedidos', (req, res) => {
   const query = `
     SELECT 
       p.ID_PEDIDO,
@@ -984,6 +985,5 @@ app.post('/platillos/toggle', (req, res) => {
 
 
 
-// LINEA HASTA EL FINAL 
-app.use(express.static(path.join(__dirname)));
-app.listen(8080, () => console.log('🚀 Servidor corriendo en http://0.0.0.0:8080'));
+
+app.listen(3000, () => console.log('🚀 Servidor corriendo en http://localhost:3000'));
